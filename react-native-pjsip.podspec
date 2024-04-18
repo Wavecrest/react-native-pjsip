@@ -12,13 +12,15 @@ Pod::Spec.new do |s|
   s.homepage     = package['homepage']
   s.platform     = :ios, "9.0"
 
-  s.source       = { :git => "https://github.com/Wavecrest/react-native-pjsip.git" }
+  s.source       = { :git => "https://github.com/react-native-pjsip.git" }
   s.source_files  = "ios/RTCPjSip/**/*.{h,m}"
 
-  s.vendored_frameworks='ios/VialerPJSIP.framework'
+  s.dependency 'Vialer-pjsip-iOS'
   s.xcconfig = {
     'GCC_PREPROCESSOR_DEFINITIONS' => 'PJ_AUTOCONF=1',
     'USE_HEADERMAP' => 'NO',
   }
   s.dependency 'React'
 end
+
+
