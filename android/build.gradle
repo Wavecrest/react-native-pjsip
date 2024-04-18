@@ -2,35 +2,52 @@ apply plugin: 'com.android.library'
 
 buildscript {
     repositories {
-        jcenter()
+        google() // Google's Maven repository
+        mavenCentral() // Use mavenCentral as jcenter is deprecated
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        // Updated classpath for the Android Gradle Plugin to a more recent version
+        classpath 'com.android.tools.build:gradle:8.3.0' // Ensure compatibility with your Gradle version
     }
 }
 
-repositories {
-    jcenter()
+allprojects {
+    repositories {
+        google() // Required for Android builds
+        mavenCentral() // Since jcenter is deprecated
+        // React Native's node_modules directory and other repositories if necessary
+        maven { url("$rootDir/../node_modules/react-native/android") }
+        maven { url("$rootDir/../node_modules/jsc-android/dist") }
+    }
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    compileSdkVersion 34 // Updated to a newer version supported by the latest React Native
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 23
+        minSdkVersion 16 // Minimum SDK remains unchanged
+        targetSdkVersion 34 // Target SDK updated to match the compile SDK
         versionCode 1
         versionName "1.0"
+
         ndk {
-            abiFilters "armeabi-v7a", "x86"
+            abiFilters "armeabi-v7a", "x86", "arm64-v8a", "x86_64" // Added support for 64-bit architectures
         }
+    }
+
+    // Configure Java 8 compatibility
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
 dependencies {
-    compile 'com.facebook.react:react-native:+'
-    compile "com.google.code.gson:gson:2.+"
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    // Updated dependencies to use implementation instead of compile
+    // and to specify the AndroidX annotation library
+    implementation 'androidx.annotation:annotation:1.2.0'
+    implementation 'com.facebook.react:react-native:+' // Consider specifying a fixed version for stability
+    implementation "com.google.code.gson:gson:2.8.8" // Updated Gson to a more recent version
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
