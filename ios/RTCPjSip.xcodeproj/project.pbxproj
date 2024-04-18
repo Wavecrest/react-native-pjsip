@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A56FDE2F2BD19244004A2090 /* VialerPJSIP in Frameworks */ = {isa = PBXBuildFile; fileRef = A6D3BE301E6845AF00949DCF /* VialerPJSIP */; };
+		A56FDE302BD19244004A2090 /* VialerPJSIP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD906A272012546C0066368D /* VialerPJSIP.framework */; };
 		A61DD9FB1E66BE9300278F2D /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A61DD9FA1E66BE9300278F2D /* AVFoundation.framework */; };
 		A6259A861E69889E0089146B /* PjSipMessage.m in Sources */ = {isa = PBXBuildFile; fileRef = A6259A851E69889E0089146B /* PjSipMessage.m */; };
 		A6D8F1201E65E482007D5702 /* CallKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A6D8F11F1E65E482007D5702 /* CallKit.framework */; };
@@ -65,6 +67,8 @@
 			files = (
 				A61DD9FB1E66BE9300278F2D /* AVFoundation.framework in Frameworks */,
 				A6D8F1201E65E482007D5702 /* CallKit.framework in Frameworks */,
+				A56FDE2F2BD19244004A2090 /* VialerPJSIP in Frameworks */,
+				A56FDE302BD19244004A2090 /* VialerPJSIP.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
