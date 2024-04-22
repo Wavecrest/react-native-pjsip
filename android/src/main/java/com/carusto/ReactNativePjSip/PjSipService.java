@@ -97,13 +97,13 @@ public class PjSipService extends Service {
 
     private PowerManager.WakeLock mIncallWakeLock;
 
-    private TelephonyManager mTelephonyManager;
+//     private TelephonyManager mTelephonyManager;
 
     private WifiManager mWifiManager;
 
     private WifiManager.WifiLock mWifiLock;
 
-    private boolean mGSMIdle;
+//     private boolean mGSMIdle;
 
     private BroadcastReceiver mPhoneStateChangedReceiver = new PhoneStateChangedReceiver();
 
@@ -225,8 +225,8 @@ public class PjSipService extends Service {
             mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName()+"-wifi-call-lock");
             mWifiLock.setReferenceCounted(false);
-            mTelephonyManager = (TelephonyManager) getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
-            mGSMIdle = true // mTelephonyManager.getCallState() == TelephonyManager.CALL_STATE_IDLE;
+//             mTelephonyManager = (TelephonyManager) getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+//             mGSMIdle = mTelephonyManager.getCallState() == TelephonyManager.CALL_STATE_IDLE;
 
             IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
             registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter, 2);
@@ -928,15 +928,15 @@ public class PjSipService extends Service {
 
     void emmitCallReceived(PjSipAccount account, PjSipCall call) {
         // Automatically decline incoming call when user uses GSM
-        if (!mGSMIdle) {
-            try {
-                call.hangup(new CallOpParam(true));
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to decline incoming call when user uses GSM", e);
-            }
-
-            return;
-        }
+//         if (!mGSMIdle) {
+//             try {
+//                 call.hangup(new CallOpParam(true));
+//             } catch (Exception e) {
+//                 Log.w(TAG, "Failed to decline incoming call when user uses GSM", e);
+//             }
+//
+//             return;
+//         }
 
         /**
         // Automatically start application when incoming call received.
@@ -1098,8 +1098,6 @@ public class PjSipService extends Service {
             if (TelephonyManager.EXTRA_STATE_RINGING.equals(extraState) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(extraState)) {
                 Log.d(TAG, "GSM call received, pause all SIP calls and do not accept incoming SIP calls.");
 
-                mGSMIdle = false;
-
                 job(new Runnable() {
                     @Override
                     public void run() {
@@ -1108,7 +1106,6 @@ public class PjSipService extends Service {
                 });
             } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(extraState)) {
                 Log.d(TAG, "GSM call released, allow to accept incoming calls.");
-                mGSMIdle = true;
             }
         }
     }
