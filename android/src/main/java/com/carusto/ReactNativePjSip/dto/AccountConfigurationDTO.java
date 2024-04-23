@@ -97,10 +97,10 @@ public class AccountConfigurationDTO {
 
     public String getIdUri() {
         if (name != null) {
-            return name + " <sip:"+ username +"@"+ domain +">";
+            return name + " <sip:"+ username + /* "@"+ domain + */">";
         }
 
-        return "<sip:"+ username +"@"+ domain +">";
+        return "<sip:"+ username + /* "@"+ domain + */">";
     }
 
     public boolean isTransportNotEmpty() {
