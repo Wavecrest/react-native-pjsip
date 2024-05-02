@@ -15,7 +15,6 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/Wavecrest/react-native-pjsip.git" }
   s.source_files  = "ios/RTCPjSip/**/*.{h,m}"
 
-  s.dependency = 'Vialer-pjsip-iOS'
   s.vendored_frameworks='ios/local/VialerPJSIP.framework'
   s.xcconfig = {
     'GCC_PREPROCESSOR_DEFINITIONS' => 'PJ_AUTOCONF=1',
