@@ -1,2 +1,2 @@
 [remote "origin"]
-    lfsurl = ssh://git@github.com:Wavecrest/react-native-pjsip.git
+    lfsurl = https://github.com/Wavecrest/react-native-pjsip.git
