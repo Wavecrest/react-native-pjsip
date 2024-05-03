@@ -3,7 +3,7 @@ set -e
 
 VERSION="v2.8.0"
 URL="https://github.com/datso/react-native-pjsip-builder/releases/download/${VERSION}/release.tar.gz"
-IOS_URL="https://github.com/Wavecrest/react-native-pjsip-builder/releases/download/3.5/ios.tar.gz"
+IOS_URL="https://github.com/Wavecrest/react-native-pjsip-builder/releases/download/3.5/release.tar.gz"
 LOCK=".libs.lock"
 DEST=".libs.tar.gz"
 DOWNLOAD=true
