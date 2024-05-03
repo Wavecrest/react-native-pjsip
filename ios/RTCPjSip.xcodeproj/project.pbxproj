@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A573AC3F2BDFE780008F499D /* VialerPJSIP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A573AC3E2BDFE780008F499D /* VialerPJSIP.framework */; };
-		A573AC412BDFE78E008F499D /* VialerPJSIP in Frameworks */ = {isa = PBXBuildFile; fileRef = A573AC402BDFE78E008F499D /* VialerPJSIP */; };
+		A56FDE2F2BD19244004A2090 /* VialerPJSIP in Frameworks */ = {isa = PBXBuildFile; fileRef = A6D3BE301E6845AF00949DCF /* VialerPJSIP */; };
+		A56FDE302BD19244004A2090 /* VialerPJSIP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD906A272012546C0066368D /* VialerPJSIP.framework */; };
 		A61DD9FB1E66BE9300278F2D /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A61DD9FA1E66BE9300278F2D /* AVFoundation.framework */; };
 		A6259A861E69889E0089146B /* PjSipMessage.m in Sources */ = {isa = PBXBuildFile; fileRef = A6259A851E69889E0089146B /* PjSipMessage.m */; };
 		A6D8F1201E65E482007D5702 /* CallKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A6D8F11F1E65E482007D5702 /* CallKit.framework */; };
@@ -35,11 +35,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A573AC3E2BDFE780008F499D /* VialerPJSIP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VialerPJSIP.framework; path = local/VialerPJSIP.framework; sourceTree = "<group>"; };
-		A573AC402BDFE78E008F499D /* VialerPJSIP */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = VialerPJSIP; path = local/VialerPJSIP.framework/VialerPJSIP; sourceTree = "<group>"; };
 		A61DD9FA1E66BE9300278F2D /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		A6259A821E6988470089146B /* PjSipMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PjSipMessage.h; sourceTree = "<group>"; };
 		A6259A851E69889E0089146B /* PjSipMessage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PjSipMessage.m; sourceTree = "<group>"; };
+		A6D3BE301E6845AF00949DCF /* VialerPJSIP */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = VialerPJSIP; path = VialerPJSIP.framework/VialerPJSIP; sourceTree = "<group>"; };
 		A6D8F11F1E65E482007D5702 /* CallKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CallKit.framework; path = System/Library/Frameworks/CallKit.framework; sourceTree = SDKROOT; };
 		A6F413921E38CE9600340CC2 /* PjSipAccount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PjSipAccount.h; sourceTree = "<group>"; };
 		A6F413931E38CE9600340CC2 /* PjSipAccount.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PjSipAccount.m; sourceTree = "<group>"; };
@@ -58,6 +57,7 @@
 		DD8F1BDF1F58974100714D48 /* PjSipPreviewVideoViewManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PjSipPreviewVideoViewManager.h; sourceTree = "<group>"; };
 		DD8F1BE01F58974C00714D48 /* PjSipPreviewVideoViewManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PjSipPreviewVideoViewManager.m; sourceTree = "<group>"; };
 		DDFF87521D79D6F50096A8BE /* libRTCPjSip.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRTCPjSip.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FD906A272012546C0066368D /* VialerPJSIP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = VialerPJSIP.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,10 +65,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A573AC412BDFE78E008F499D /* VialerPJSIP in Frameworks */,
-				A573AC3F2BDFE780008F499D /* VialerPJSIP.framework in Frameworks */,
 				A61DD9FB1E66BE9300278F2D /* AVFoundation.framework in Frameworks */,
 				A6D8F1201E65E482007D5702 /* CallKit.framework in Frameworks */,
+				A56FDE2F2BD19244004A2090 /* VialerPJSIP in Frameworks */,
+				A56FDE302BD19244004A2090 /* VialerPJSIP.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,8 +78,8 @@
 		A6A12F5D1E65A8400002151D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				A573AC402BDFE78E008F499D /* VialerPJSIP */,
-				A573AC3E2BDFE780008F499D /* VialerPJSIP.framework */,
+				A6D3BE301E6845AF00949DCF /* VialerPJSIP */,
+				FD906A272012546C0066368D /* VialerPJSIP.framework */,
 				A61DD9FA1E66BE9300278F2D /* AVFoundation.framework */,
 				A6D8F11F1E65E482007D5702 /* CallKit.framework */,
 			);
@@ -288,7 +288,6 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/local",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -301,7 +300,7 @@
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/local/VialerPJSIP.framework",
+					"$(PROJECT_DIR)/VialerPJSIP.framework",
 				);
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "-ObjC";
@@ -317,7 +316,6 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/local",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "PJ_AUTOCONF=1";
 				HEADER_SEARCH_PATHS = (
@@ -327,7 +325,7 @@
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/local/VialerPJSIP.framework",
+					"$(PROJECT_DIR)/VialerPJSIP.framework",
 				);
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_LDFLAGS = "-ObjC";

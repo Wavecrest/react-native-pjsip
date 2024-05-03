@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "postinstall": "bash libs.sh && rm -rf ./ios/VialerPJSIP.framework",
+    "postinstall": "bash libs.sh",
     "lint": "eslint ./src",
     "generate-docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose"
   },
