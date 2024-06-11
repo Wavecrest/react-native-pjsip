@@ -181,26 +181,6 @@ public class PjSipService extends Service {
 
             mTrash.add(epConfig);
 
-            // Configure transports
-            {
-                TransportConfig transportConfig = new TransportConfig();
-                transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                mUdpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, transportConfig);
-                mTrash.add(transportConfig);
-            }
-            {
-                TransportConfig transportConfig = new TransportConfig();
-                transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                mTcpTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TCP, transportConfig);
-                mTrash.add(transportConfig);
-            }
-            {
-                TransportConfig transportConfig = new TransportConfig();
-                transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                mTlsTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
-                mTrash.add(transportConfig);
-            }
-
             mEndpoint.libStart();
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
@@ -298,12 +278,12 @@ public class PjSipService extends Service {
         // Remove link to account
         mAccounts.remove(account);
 
-        // do not remove transport
-        // try {
-        //     mEndpoint.transportClose(account.getTransportId());
-        // } catch (Exception e) {
-        //     Log.w(TAG, "Failed to close transport for account", e);
-        // }
+        // Remove transport
+        try {
+            mEndpoint.transportClose(account.getTransportId());
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to close transport for account", e);
+        }
 
         // Remove account in PjSip
         account.delete();
@@ -538,12 +518,18 @@ public class PjSipService extends Service {
         int transportId = mTcpTransportId;
 
         if (configuration.isTransportNotEmpty()) {
+            TransportConfig transportConfig = new TransportConfig();
+
             switch (configuration.getTransport()) {
                 case "UDP":
-                    transportId = mUdpTransportId;
+                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+                    transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, transportConfig);
+                    mTrash.add(transportConfig);
                     break;
                 case "TLS":
-                    transportId = mTlsTransportId;
+                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+                    transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
+                    mTrash.add(transportConfig);
                     break;
                 default:
                     Log.w(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
