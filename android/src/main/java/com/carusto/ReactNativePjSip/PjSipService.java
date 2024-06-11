@@ -298,12 +298,12 @@ public class PjSipService extends Service {
         // Remove link to account
         mAccounts.remove(account);
 
-        // Remove transport
-        try {
-            mEndpoint.transportClose(account.getTransportId());
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to close transport for account", e);
-        }
+        // do not remove transport
+        // try {
+        //     mEndpoint.transportClose(account.getTransportId());
+        // } catch (Exception e) {
+        //     Log.w(TAG, "Failed to close transport for account", e);
+        // }
 
         // Remove account in PjSip
         account.delete();
