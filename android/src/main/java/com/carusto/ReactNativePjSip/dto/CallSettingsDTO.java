@@ -4,6 +4,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.google.gson.Gson;
 
 public class CallSettingsDTO {
+    private Integer audioCount;
     private Integer flag;
     private Integer requestKeyframeMethod;
 
