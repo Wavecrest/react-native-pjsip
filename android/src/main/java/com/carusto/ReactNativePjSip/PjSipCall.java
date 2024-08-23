@@ -16,12 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class PjSipCall extends Call {
 
-    public static VideoWindow videoWindow;
-
-    public static VideoPreview videoPreview;
-
-    public static CopyOnWriteArrayList<PjSipVideoMediaChange> mediaListeners = new CopyOnWriteArrayList<>();
-
     private static String TAG = "PjSipCall";
 
     private PjSipAccount account;
@@ -161,11 +155,6 @@ public class PjSipCall extends Call {
     @Override
     public void onCallMediaEvent(OnCallMediaEventParam prm) {
         super.onCallMediaEvent(prm);
-
-        // Hack to resize all video windows.
-        for (PjSipVideoMediaChange listener : mediaListeners) {
-            listener.onChange();
-        }
     }
 
     @Override
@@ -259,11 +248,9 @@ public class PjSipCall extends Call {
             // -----
             json.put("remoteOfferer", info.getRemOfferer());
             json.put("remoteAudioCount", info.getRemAudioCount());
-            json.put("remoteVideoCount", info.getRemVideoCount());
 
             // -----
             json.put("audioCount", info.getSetting().getAudioCount());
-            json.put("videoCount", info.getSetting().getVideoCount());
 
             json.put("media", mediaInfoToJson(info.getMedia()));
             json.put("provisionalMedia", mediaInfoToJson(info.getProvMedia()));
@@ -287,15 +274,10 @@ public class PjSipCall extends Call {
                 JSONObject audioStreamJson = new JSONObject();
                 audioStreamJson.put("confSlot", info.getAudioConfSlot());
 
-                JSONObject videoStreamJson = new JSONObject();
-                videoStreamJson.put("captureDevice", info.getVideoCapDev());
-                videoStreamJson.put("windowId", info.getVideoIncomingWindowId());
-
                 json.put("dir", info.getDir().toString());
                 json.put("type", info.getType().toString());
                 json.put("status", info.getStatus().toString());
                 json.put("audioStream", audioStreamJson);
-                json.put("videoStream", videoStreamJson);
 
                 result.put(json);
             }

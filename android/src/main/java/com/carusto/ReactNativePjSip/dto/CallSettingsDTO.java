@@ -4,17 +4,11 @@ import com.facebook.react.bridge.ReadableMap;
 import com.google.gson.Gson;
 
 public class CallSettingsDTO {
-    private Integer audioCount;
-    private Integer videoCount;
     private Integer flag;
     private Integer requestKeyframeMethod;
 
     public Integer getAudioCount() {
         return audioCount;
-    }
-
-    public Integer getVideoCount() {
-        return videoCount;
     }
 
     public Integer getFlag() {
@@ -27,10 +21,6 @@ public class CallSettingsDTO {
 
     public void setAudioCount(Integer audioCount) {
         this.audioCount = audioCount;
-    }
-
-    public void setVideoCount(Integer videoCount) {
-        this.videoCount = videoCount;
     }
 
     public void setFlag(Integer flag) {
@@ -56,9 +46,6 @@ public class CallSettingsDTO {
 
         if (data.hasKey("audioCount")) {
             result.setAudioCount(data.getInt("audioCount"));
-        }
-        if (data.hasKey("videoCount")) {
-            result.setVideoCount(data.getInt("videoCount"));
         }
         if (data.hasKey("flag")) {
             result.setFlag(data.getInt("flag"));

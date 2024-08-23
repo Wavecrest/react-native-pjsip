@@ -44,7 +44,6 @@ import org.pjsip.pjsua2.StringVector;
 import org.pjsip.pjsua2.TransportConfig;
 import org.pjsip.pjsua2.CodecInfoVector;
 import org.pjsip.pjsua2.CodecInfo;
-import org.pjsip.pjsua2.VideoDevInfo;
 import org.pjsip.pjsua2.pj_qos_type;
 import org.pjsip.pjsua2.pjmedia_orient;
 import org.pjsip.pjsua2.pjsip_inv_state;
@@ -487,8 +486,6 @@ public class PjSipService extends Service {
         cfg.getRegConfig().setRegisterOnAdd(configuration.isRegOnAdd());
         cfg.getSipConfig().getAuthCreds().add(cred);
 
-        cfg.getVideoConfig().getRateControlBandwidth();
-
         // Registration settings
 
         if (configuration.getContactParams() != null) {
@@ -547,12 +544,6 @@ public class PjSipService extends Service {
 
         cfg.getMediaConfig().getTransportConfig().setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
 
-        cfg.getVideoConfig().setAutoShowIncoming(true);
-        cfg.getVideoConfig().setAutoTransmitOutgoing(true);
-
-        int cap_dev = cfg.getVideoConfig().getDefaultCaptureDevice();
-        mEndpoint.vidDevManager().setCaptureOrient(cap_dev, pjmedia_orient.PJMEDIA_ORIENT_ROTATE_270DEG, true);
-
         // -----
 
         PjSipAccount account = new PjSipAccount(this, transportId, configuration);
@@ -608,9 +599,6 @@ public class PjSipService extends Service {
 
                 if (settingsDTO.getAudioCount() != null) {
                     callSettings.setAudioCount(settingsDTO.getAudioCount());
-                }
-                if (settingsDTO.getVideoCount() != null) {
-                    callSettings.setVideoCount(settingsDTO.getVideoCount());
                 }
                 if (settingsDTO.getFlag() != null) {
                     callSettings.setFlag(settingsDTO.getFlag());
