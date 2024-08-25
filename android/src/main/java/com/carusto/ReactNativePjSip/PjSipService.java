@@ -117,6 +117,18 @@ public class PjSipService extends Service {
 
     private void load() {
         try {
+            System.loadLibrary("crypto");
+        } catch (UnsatisfiedLinkError error) {
+            Log.e(TAG, "Error while loading PJSIP crypto native library", error);
+            throw new RuntimeException(error);
+        }
+        try {
+            System.loadLibrary("ssl");
+        } catch (UnsatisfiedLinkError error) {
+            Log.e(TAG, "Error while loading PJSIP ssl native library", error);
+            throw new RuntimeException(error);
+        }
+        try {
             System.loadLibrary("pjsua2");
         } catch (UnsatisfiedLinkError error) {
             Log.e(TAG, "Error while loading PJSIP pjsua2 native library", error);
