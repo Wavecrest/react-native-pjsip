@@ -173,6 +173,7 @@ public class PjSipService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
+                mWorkerThread.join();
                 mWorkerThread = null;
             }
         }
@@ -219,7 +220,6 @@ public class PjSipService extends Service {
             } catch (IllegalArgumentException e) {
                 Log.w(TAG, "Receiver was not registered or already unregistered");
             }
-            mInitialized = false;
         }
 
         // Optionally nullify other properties
@@ -227,6 +227,7 @@ public class PjSipService extends Service {
         mServiceConfiguration = null;
         mLogWriter = null;
         mEmitter = null;
+        mInitialized = false;
     }
 
 
