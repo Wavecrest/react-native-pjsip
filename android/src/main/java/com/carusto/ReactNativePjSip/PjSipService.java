@@ -179,6 +179,10 @@ public class PjSipService extends Service {
 
         try {
             if (mEndpoint != null) {
+                for (PjSipCall call : mCalls) {
+                    call.delete();
+                }
+                mCalls.clear();
                 for (PjSipAccount account : mAccounts) {
                     account.delete();
                 }
