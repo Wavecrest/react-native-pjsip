@@ -184,8 +184,8 @@ public class PjSipService extends Service {
                 }
                 mAccounts.clear();
                 for (Object obj : mTrash) {
-                    if (obj instanceof Pjsua2Object) {
-                        ((Pjsua2Object) obj).delete();
+                    if (obj instanceof PersistentObject) {
+                        ((PersistentObject) obj).delete();
                     }
                 }
                 mTrash.clear();
