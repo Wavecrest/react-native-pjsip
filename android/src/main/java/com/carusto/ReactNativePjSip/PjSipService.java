@@ -179,7 +179,15 @@ public class PjSipService extends Service {
 
         try {
             if (mEndpoint != null) {
+                for (PjSipAccount account : mAccounts) {
+                    account.delete();
+                }
                 mAccounts.clear();
+                for (Object obj : mTrash) {
+                    if (obj instanceof Pjsua2Object) {
+                        ((Pjsua2Object) obj).delete();
+                    }
+                }
                 mTrash.clear();
                 mEndpoint.libDestroy();
                 mEndpoint = null;
