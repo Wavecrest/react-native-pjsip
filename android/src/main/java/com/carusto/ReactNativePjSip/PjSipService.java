@@ -173,7 +173,12 @@ public class PjSipService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
-                mWorkerThread.join();
+                try {
+                    mWorkerThread.join();
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Worker thread join interrupted", e);
+                    Thread.currentThread().interrupt();
+                }
                 mWorkerThread = null;
             }
         }
