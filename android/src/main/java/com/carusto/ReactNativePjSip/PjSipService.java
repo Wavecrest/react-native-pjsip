@@ -178,21 +178,20 @@ public class PjSipService extends Service {
         }
 
         try {
+            for (PjSipCall call : mCalls) {
+                evict(call)
+            }
+            for (PjSipAccount account : mAccounts) {
+                evict(account);
+            }
+
+            for (Object obj : mTrash) {
+                if (obj instanceof PersistentObject) {
+                    ((PersistentObject) obj).delete();
+                }
+            }
+            mTrash.clear();
             if (mEndpoint != null) {
-                for (PjSipCall call : mCalls) {
-                    call.delete();
-                }
-                mCalls.clear();
-                for (PjSipAccount account : mAccounts) {
-                    account.delete();
-                }
-                mAccounts.clear();
-                for (Object obj : mTrash) {
-                    if (obj instanceof PersistentObject) {
-                        ((PersistentObject) obj).delete();
-                    }
-                }
-                mTrash.clear();
                 mEndpoint.libDestroy();
                 mEndpoint = null;
             }
@@ -496,15 +495,19 @@ public class PjSipService extends Service {
     private void handleCallMake(Intent intent) {
         try {
             int accountId = intent.getIntExtra("account_id", -1);
+            Log.w(TAG, "PjSipAccount account = findAccount(accountId);");
             PjSipAccount account = findAccount(accountId);
             String destination = intent.getStringExtra("destination");
             String settingsJson = intent.getStringExtra("settings");
             String messageJson = intent.getStringExtra("message");
 
+            Log.w(TAG, "CallOpParam callOpParam = new CallOpParam(true);");
             CallOpParam callOpParam = new CallOpParam(true);
 
             if (settingsJson != null) {
+                Log.w(TAG, "CallSettingsDTO settingsDTO = CallSettingsDTO.fromJson(settingsJson);");
                 CallSettingsDTO settingsDTO = CallSettingsDTO.fromJson(settingsJson);
+                Log.w(TAG, "CallSetting callSettings = new CallSetting();");
                 CallSetting callSettings = new CallSetting();
 
                 if (settingsDTO.getAudioCount() != null) {
@@ -522,7 +525,9 @@ public class PjSipService extends Service {
             }
 
             if (messageJson != null) {
+                Log.w(TAG, "SipMessageDTO messageDTO = SipMessageDTO.fromJson(messageJson);");
                 SipMessageDTO messageDTO = SipMessageDTO.fromJson(messageJson);
+                Log.w(TAG, "SipTxOption callTxOption = new SipTxOption();");
                 SipTxOption callTxOption = new SipTxOption();
 
                 if (messageDTO.getTargetUri() != null) {
@@ -542,6 +547,7 @@ public class PjSipService extends Service {
                 mTrash.add(callTxOption);
             }
 
+            Log.w(TAG, "PjSipCall call = new PjSipCall(account);");
             PjSipCall call = new PjSipCall(account);
             call.makeCall(destination, callOpParam);
             callOpParam.delete();
@@ -549,6 +555,7 @@ public class PjSipService extends Service {
             doPauseParallelCalls(call);
 
             mCalls.add(call);
+            Log.w(TAG, "mEmitter.fireIntentHandled(intent, call.toJson());");
             mEmitter.fireIntentHandled(intent, call.toJson());
         } catch (Exception e) {
             mEmitter.fireIntentHandled(intent, e);
