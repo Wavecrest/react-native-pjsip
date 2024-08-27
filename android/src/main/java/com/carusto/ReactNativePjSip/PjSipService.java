@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
+import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -60,6 +61,10 @@ public class PjSipService extends Service {
     private String mRegisteredThread;
 
     private BroadcastReceiver mPhoneStateChangedReceiver = new PhoneStateChangedReceiver();
+
+    public PjSipBroadcastEmiter getEmitter() {
+        return mEmitter;
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
