@@ -169,11 +169,11 @@ public class PjSipService extends Service {
         }
     }
 
-    @Override
-    public void onDestroy() {
+    public void releaseSIPResources() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
+                mWorkerThread = null
             }
         }
 
@@ -188,7 +188,15 @@ public class PjSipService extends Service {
 
         if (mInitialized) {
             unregisterReceiver(mPhoneStateChangedReceiver);
+            mInitialized = false
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.w(TAG, "PJSIPService onDestroy()");
+
+        releaseSIPResources()
 
         super.onDestroy();
     }
@@ -849,5 +857,21 @@ public class PjSipService extends Service {
                 job(PjSipService.this::doPauseAllCalls);
             }
         }
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (level == TRIM_MEMORY_UI_HIDDEN) {
+            Log.w(TAG, "PJSIPService onTrimMemory()");
+            releaseSIPResources();
+        }
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        Log.w(TAG, "PJSIPService releaseSIPResources()");
+        releaseSIPResources();
     }
 }
