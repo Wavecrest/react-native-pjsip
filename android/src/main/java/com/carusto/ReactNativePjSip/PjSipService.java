@@ -179,7 +179,7 @@ public class PjSipService extends Service {
 
         try {
             for (PjSipCall call : mCalls) {
-                evict(call)
+                evict(call);
             }
             for (PjSipAccount account : mAccounts) {
                 evict(account);
