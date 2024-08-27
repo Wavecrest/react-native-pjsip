@@ -179,6 +179,8 @@ public class PjSipService extends Service {
 
         try {
             if (mEndpoint != null) {
+                mAccounts.clear();
+                mTrash.clear();
                 mEndpoint.libDestroy();
                 mEndpoint = null;
             }
