@@ -181,9 +181,12 @@ public class PjSipService extends Service {
             for (PjSipCall call : mCalls) {
                 evict(call);
             }
+            mCalls.clear();
+
             for (PjSipAccount account : mAccounts) {
                 evict(account);
             }
+            mAccounts.clear();
 
             for (Object obj : mTrash) {
                 if (obj instanceof PersistentObject) {
@@ -191,6 +194,17 @@ public class PjSipService extends Service {
                 }
             }
             mTrash.clear();
+
+            if (mIncallWakeLock != null && mIncallWakeLock.isHeld()) {
+                mIncallWakeLock.release();
+                mIncallWakeLock = null;
+            }
+
+            if (mWifiLock != null && mWifiLock.isHeld()) {
+                mWifiLock.release();
+                mWifiLock = null;
+            }
+
             if (mEndpoint != null) {
                 mEndpoint.libDestroy();
                 mEndpoint = null;
@@ -200,10 +214,21 @@ public class PjSipService extends Service {
         }
 
         if (mInitialized) {
-            unregisterReceiver(mPhoneStateChangedReceiver);
+            try {
+                unregisterReceiver(mPhoneStateChangedReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Receiver was not registered or already unregistered");
+            }
             mInitialized = false;
         }
+
+        // Optionally nullify other properties
+        mHandler = null;
+        mServiceConfiguration = null;
+        mLogWriter = null;
+        mEmitter = null;
     }
+
 
     @Override
     public void onDestroy() {
