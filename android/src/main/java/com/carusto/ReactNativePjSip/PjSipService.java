@@ -173,7 +173,7 @@ public class PjSipService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
-                mWorkerThread = null
+                mWorkerThread = null;
             }
         }
 
@@ -188,7 +188,7 @@ public class PjSipService extends Service {
 
         if (mInitialized) {
             unregisterReceiver(mPhoneStateChangedReceiver);
-            mInitialized = false
+            mInitialized = false;
         }
     }
 
@@ -196,7 +196,7 @@ public class PjSipService extends Service {
     public void onDestroy() {
         Log.w(TAG, "PJSIPService onDestroy()");
 
-        releaseSIPResources()
+        releaseSIPResources();
 
         super.onDestroy();
     }
