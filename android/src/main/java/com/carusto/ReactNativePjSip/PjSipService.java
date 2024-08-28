@@ -73,20 +73,30 @@ public class PjSipService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
+        Log.e(TAG, "onStartCommand");
+
         if (!mInitialized) {
+            Log.w(TAG, "mInitialized");
             if (intent != null && intent.hasExtra("service")) {
                 mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
             }
 
             mWorkerThread = new HandlerThread(getClass().getSimpleName(), Process.THREAD_PRIORITY_FOREGROUND);
+            Log.w(TAG, "mWorkerThread");
             mWorkerThread.setPriority(Thread.MAX_PRIORITY);
             mWorkerThread.start();
             mHandler = new Handler(mWorkerThread.getLooper());
+            Log.w(TAG, "mHandler");
             mEmitter = new PjSipBroadcastEmiter(this);
+            Log.w(TAG, "mEmitter");
             mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
+            Log.w(TAG, "mAudioManager");
             mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
+            Log.w(TAG, "mPowerManager");
             mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            Log.w(TAG, "mWifiManager");
             mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
+            Log.w(TAG, "mWifiLock");
             mWifiLock.setReferenceCounted(false);
 
             IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
@@ -94,14 +104,16 @@ public class PjSipService extends Service {
 
             mInitialized = true;
 
+            Log.w(TAG, "before load");
             job(this::load);
         }
 
         if (intent != null) {
+            Log.w(TAG, "handle intent");
             job(() -> handle(intent));
         }
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     private void load() {
@@ -173,12 +185,6 @@ public class PjSipService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
-                try {
-                    mWorkerThread.join();
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Worker thread join interrupted", e);
-                    Thread.currentThread().interrupt();
-                }
                 mWorkerThread = null;
             }
         }
@@ -187,13 +193,9 @@ public class PjSipService extends Service {
             for (PjSipCall call : mCalls) {
                 evict(call);
             }
-            mCalls.clear();
-
             for (PjSipAccount account : mAccounts) {
                 evict(account);
             }
-            mAccounts.clear();
-
             for (Object obj : mTrash) {
                 if (obj instanceof PersistentObject) {
                     ((PersistentObject) obj).delete();
@@ -227,11 +229,6 @@ public class PjSipService extends Service {
             }
         }
 
-        // Optionally nullify other properties
-        mHandler = null;
-        mServiceConfiguration = null;
-        mLogWriter = null;
-        mEmitter = null;
         mInitialized = false;
     }
 
@@ -254,11 +251,6 @@ public class PjSipService extends Service {
     }
 
     public void evict(final PjSipAccount account) {
-        if (mHandler.getLooper().getThread() != Thread.currentThread()) {
-            job(() -> evict(account));
-            return;
-        }
-
         mAccounts.remove(account);
 
         try {
@@ -271,11 +263,6 @@ public class PjSipService extends Service {
     }
 
     public void evict(final PjSipCall call) {
-        if (mHandler.getLooper().getThread() != Thread.currentThread()) {
-            job(() -> evict(call));
-            return;
-        }
-
         mCalls.remove(call);
         call.delete();
     }
@@ -918,12 +905,5 @@ public class PjSipService extends Service {
             Log.w(TAG, "PJSIPService onTrimMemory()");
             releaseSIPResources();
         }
-    }
-
-    @Override
-    public void onTaskRemoved(Intent rootIntent) {
-        super.onTaskRemoved(rootIntent);
-        Log.w(TAG, "PJSIPService releaseSIPResources()");
-        releaseSIPResources();
     }
 }
