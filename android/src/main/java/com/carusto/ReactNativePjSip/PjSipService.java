@@ -39,6 +39,8 @@ public class PjSipService extends Service {
 
     private static final String TAG = "PjSipService";
 
+    private final Object initLock = new Object();
+
     private boolean mInitialized;
     private HandlerThread mWorkerThread;
     private Handler mHandler;
