@@ -39,8 +39,6 @@ public class PjSipService extends Service {
 
     private static final String TAG = "PjSipService";
 
-    private final Object initLock = new Object();
-
     private boolean mInitialized;
     private HandlerThread mWorkerThread;
     private Handler mHandler;
@@ -77,42 +75,40 @@ public class PjSipService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.w(TAG, "onStartCommand");
 
-        synchronized (initLock) {
-            if (!mInitialized) {
-                Log.w(TAG, "mInitialized");
-                if (intent != null && intent.hasExtra("service")) {
-                    mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
-                }
+        if (!mInitialized) {
+            Log.w(TAG, "mInitialized");
+            if (intent != null && intent.hasExtra("service")) {
+                mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
+            }
 
-                mWorkerThread = new HandlerThread(getClass().getSimpleName(), Process.THREAD_PRIORITY_FOREGROUND);
-                Log.w(TAG, "mWorkerThread");
-                mWorkerThread.setPriority(Thread.MAX_PRIORITY);
-                mWorkerThread.start();
-                mHandler = new Handler(mWorkerThread.getLooper());
-                Log.w(TAG, "mHandler");
-                mEmitter = new PjSipBroadcastEmiter(this);
-                Log.w(TAG, "mEmitter");
-                mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
-                Log.w(TAG, "mAudioManager");
-                mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
-                Log.w(TAG, "mPowerManager");
-                mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-                Log.w(TAG, "mWifiManager");
-                mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
-                Log.w(TAG, "mWifiLock");
-                mWifiLock.setReferenceCounted(false);
+            mWorkerThread = new HandlerThread(getClass().getSimpleName(), Process.THREAD_PRIORITY_FOREGROUND);
+            Log.w(TAG, "mWorkerThread");
+            mWorkerThread.setPriority(Thread.MAX_PRIORITY);
+            mWorkerThread.start();
+            mHandler = new Handler(mWorkerThread.getLooper());
+            Log.w(TAG, "mHandler");
+            mEmitter = new PjSipBroadcastEmiter(this);
+            Log.w(TAG, "mEmitter");
+            mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
+            Log.w(TAG, "mAudioManager");
+            mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
+            Log.w(TAG, "mPowerManager");
+            mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            Log.w(TAG, "mWifiManager");
+            mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
+            Log.w(TAG, "mWifiLock");
+            mWifiLock.setReferenceCounted(false);
 
-                IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-                registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter);
+            IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+            registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter);
 
-                mInitialized = true;
+            mInitialized = true;
 
-                Log.w(TAG, "before load");
-                try {
-                    job(this::load);
-                } catch (Exception e) {
-                    Log.e(TAG, "Exception during job(this::load)", e);
-                }
+            Log.w(TAG, "before load");
+            try {
+                job(this::load);
+            } catch (Exception e) {
+                Log.e(TAG, "Exception during job(this::load)", e);
             }
         }
 
@@ -126,6 +122,7 @@ public class PjSipService extends Service {
 
     private void load() {
         try {
+            Log.w(TAG, "System.loadLibrary('pjsua2');");
             System.loadLibrary("pjsua2");
         } catch (UnsatisfiedLinkError error) {
             Log.e(TAG, "Error while loading PJSIP pjsua2 native library", error);
@@ -133,8 +130,11 @@ public class PjSipService extends Service {
         }
 
         try {
+            Log.w(TAG, "if (mEndpoint == null) {");
             if (mEndpoint == null) {
+                Log.w(TAG, "mEndpoint = new Endpoint();");
                 mEndpoint = new Endpoint();
+                Log.w(TAG, "mEndpoint.libCreate();");
                 mEndpoint.libCreate();
 
                 // Register the main thread once
@@ -251,12 +251,7 @@ public class PjSipService extends Service {
     }
 
     private void job(Runnable job) {
-        try {
-            job.run();
-        } catch (Exception e) {
-            Log.e(TAG, "Job execution failed", e);
-        }
-//         mHandler.post(job);
+        mHandler.post(job);
     }
 
     protected synchronized AudDevManager getAudDevManager() {
