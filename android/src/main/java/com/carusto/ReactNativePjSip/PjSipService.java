@@ -223,6 +223,7 @@ public class PjSipService extends Service {
 
             if (mEndpoint != null) {
                 mEndpoint.libDestroy();
+                mEndpoint.delete();
                 mEndpoint = null;
             }
         } catch (Exception e) {
