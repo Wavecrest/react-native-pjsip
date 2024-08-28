@@ -73,7 +73,7 @@ public class PjSipService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
-        Log.e(TAG, "onStartCommand");
+        Log.w(TAG, "onStartCommand");
 
         if (!mInitialized) {
             Log.w(TAG, "mInitialized");
@@ -243,7 +243,12 @@ public class PjSipService extends Service {
     }
 
     private void job(Runnable job) {
-        mHandler.post(job);
+        try {
+            job.run();
+        } catch (Exception e) {
+            Log.e(TAG, "Job execution failed", e);
+        }
+//         mHandler.post(job);
     }
 
     protected synchronized AudDevManager getAudDevManager() {
