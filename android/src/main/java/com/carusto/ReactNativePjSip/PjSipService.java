@@ -75,37 +75,43 @@ public class PjSipService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.w(TAG, "onStartCommand");
 
-        if (!mInitialized) {
-            Log.w(TAG, "mInitialized");
-            if (intent != null && intent.hasExtra("service")) {
-                mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
+        synchronized (initLock) {
+            if (!mInitialized) {
+                Log.w(TAG, "mInitialized");
+                if (intent != null && intent.hasExtra("service")) {
+                    mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
+                }
+
+                mWorkerThread = new HandlerThread(getClass().getSimpleName(), Process.THREAD_PRIORITY_FOREGROUND);
+                Log.w(TAG, "mWorkerThread");
+                mWorkerThread.setPriority(Thread.MAX_PRIORITY);
+                mWorkerThread.start();
+                mHandler = new Handler(mWorkerThread.getLooper());
+                Log.w(TAG, "mHandler");
+                mEmitter = new PjSipBroadcastEmiter(this);
+                Log.w(TAG, "mEmitter");
+                mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
+                Log.w(TAG, "mAudioManager");
+                mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
+                Log.w(TAG, "mPowerManager");
+                mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                Log.w(TAG, "mWifiManager");
+                mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
+                Log.w(TAG, "mWifiLock");
+                mWifiLock.setReferenceCounted(false);
+
+                IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+                registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter);
+
+                mInitialized = true;
+
+                Log.w(TAG, "before load");
+                try {
+                    job(this::load);
+                } catch (Exception e) {
+                    Log.e(TAG, "Exception during job(this::load)", e);
+                }
             }
-
-            mWorkerThread = new HandlerThread(getClass().getSimpleName(), Process.THREAD_PRIORITY_FOREGROUND);
-            Log.w(TAG, "mWorkerThread");
-            mWorkerThread.setPriority(Thread.MAX_PRIORITY);
-            mWorkerThread.start();
-            mHandler = new Handler(mWorkerThread.getLooper());
-            Log.w(TAG, "mHandler");
-            mEmitter = new PjSipBroadcastEmiter(this);
-            Log.w(TAG, "mEmitter");
-            mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
-            Log.w(TAG, "mAudioManager");
-            mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
-            Log.w(TAG, "mPowerManager");
-            mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            Log.w(TAG, "mWifiManager");
-            mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
-            Log.w(TAG, "mWifiLock");
-            mWifiLock.setReferenceCounted(false);
-
-            IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-            registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter);
-
-            mInitialized = true;
-
-            Log.w(TAG, "before load");
-            job(this::load);
         }
 
         if (intent != null) {
