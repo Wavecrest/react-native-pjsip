@@ -346,6 +346,9 @@ public class PjSipService extends Service {
             case PjActions.ACTION_CHANGE_CODEC_SETTINGS:
                 handleChangeCodecSettings(intent);
                 break;
+            case PjActions.ACTION_STOP:
+                handleChangeCodecSettings(intent);
+                break;
 
             // Configuration actions
             case PjActions.ACTION_SET_SERVICE_CONFIGURATION:
