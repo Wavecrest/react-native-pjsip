@@ -157,25 +157,36 @@ static PjSipEndpoint *sharedInstance = nil;
     NSMutableArray *callsResult = [[NSMutableArray alloc] initWithCapacity:[@([self.calls count]) unsignedIntegerValue]];
     NSDictionary *settingsResult = @{ @"codecs": [self getCodecs] };
 
+    // Filter out nils for accounts
     for (NSString *key in self.accounts) {
         PjSipAccount *acc = self.accounts[key];
-        [accountsResult addObject:[acc toJsonDictionary]];
+        NSDictionary *accountDict = [acc toJsonDictionary];
+        if (accountDict) {
+            [accountsResult addObject:accountDict];
+        }
     }
 
+    // Filter out nils for calls
     for (NSString *key in self.calls) {
         PjSipCall *call = self.calls[key];
-        [callsResult addObject:[call toJsonDictionary:self.isSpeaker]];
+        NSDictionary *callDict = [call toJsonDictionary:self.isSpeaker];
+        if (callDict) {
+            [callsResult addObject:callDict];
+        }
     }
 
     if ([accountsResult count] > 0 && config[@"service"] && config[@"service"][@"stun"]) {
         for (NSDictionary *account in accountsResult) {
-            int accountId = account[@"_data"][@"id"];
-            [[PjSipEndpoint instance] updateStunServers:accountId stunServerList:config[@"service"][@"stun"]];
+            int accountId = [account[@"_data"][@"id"] intValue];
+            if (accountId > 0) { // Ensure accountId is valid
+                [[PjSipEndpoint instance] updateStunServers:accountId stunServerList:config[@"service"][@"stun"]];
+            }
         }
     }
 
     return @{@"accounts": accountsResult, @"calls": callsResult, @"settings": settingsResult, @"connectivity": @YES};
 }
+
 
 - (void)stop {
     [self.calls removeAllObjects];
