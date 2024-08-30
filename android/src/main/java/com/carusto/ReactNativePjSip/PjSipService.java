@@ -389,7 +389,12 @@ public class PjSipService extends Service {
     }
 
     private void handleStop(Intent intent) {
-        releaseSIPResources();
+        try {
+            releaseSIPResources();
+            mEmitter.fireIntentHandled(intent);
+        } catch (Exception e) {
+            mEmitter.fireIntentHandled(intent, e);
+        }
     }
 
     private void handleSetServiceConfiguration(Intent intent) {
