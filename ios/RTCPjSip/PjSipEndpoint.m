@@ -12,12 +12,15 @@
 
 @implementation PjSipEndpoint
 
-+ (instancetype) instance {
++ (instancetype)instance {
     static PjSipEndpoint *sharedInstance = nil;
     static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        sharedInstance = [[PjSipEndpoint alloc] init];
-    });
+
+    if (!sharedInstance) {
+        dispatch_once(&onceToken, ^{
+            sharedInstance = [[PjSipEndpoint alloc] init];
+        });
+    }
 
     return sharedInstance;
 }
@@ -171,6 +174,28 @@
     }
 
     return @{@"accounts": accountsResult, @"calls": callsResult, @"settings": settingsResult, @"connectivity": @YES};
+}
+
+- (void)stop {
+    for (NSString *key in self.calls) {
+        PjSipCall *call = self.calls[key];
+        pjsua_call_hangup(call.id, 0, NULL, NULL);
+    }
+    [self.calls removeAllObjects];
+
+    for (NSString *key in self.accounts) {
+        PjSipAccount *account = self.accounts[key];
+        pjsua_acc_del(account.id);
+    }
+    [self.accounts removeAllObjects];
+
+    if (pjsua_destroy() != PJ_SUCCESS) {
+        NSLog(@"Error destroying pjsua");
+    }
+
+    self.udpTransportId = PJSUA_INVALID_ID;
+    self.tcpTransportId = PJSUA_INVALID_ID;
+    self.tlsTransportId = PJSUA_INVALID_ID;
 }
 
 - (void)updateStunServers:(int)accountId stunServerList:(NSArray *)stunServerList {
