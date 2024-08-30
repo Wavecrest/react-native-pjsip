@@ -347,7 +347,7 @@ public class PjSipService extends Service {
                 handleChangeCodecSettings(intent);
                 break;
             case PjActions.ACTION_STOP:
-                handleChangeCodecSettings(intent);
+                handleStopAction(intent);
                 break;
 
             // Configuration actions
@@ -386,6 +386,10 @@ public class PjSipService extends Service {
             Log.e(TAG, "Error while building codecs list", error);
             throw new RuntimeException(error);
         }
+    }
+
+    private void handleStop(Intent intent) {
+        releaseSIPResources()
     }
 
     private void handleSetServiceConfiguration(Intent intent) {
