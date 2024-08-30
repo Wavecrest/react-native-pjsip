@@ -187,6 +187,7 @@
     self.udpTransportId = PJSUA_INVALID_ID;
     self.tcpTransportId = PJSUA_INVALID_ID;
     self.tlsTransportId = PJSUA_INVALID_ID;
+    sharedInstance = nil;
 }
 
 - (void)updateStunServers:(int)accountId stunServerList:(NSArray *)stunServerList {
