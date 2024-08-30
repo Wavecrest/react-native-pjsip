@@ -177,16 +177,7 @@
 }
 
 - (void)stop {
-    for (NSString *key in self.calls) {
-        PjSipCall *call = self.calls[key];
-        pjsua_call_hangup(call.id, 0, NULL, NULL);
-    }
     [self.calls removeAllObjects];
-
-    for (NSString *key in self.accounts) {
-        PjSipAccount *account = self.accounts[key];
-        pjsua_acc_del(account.id);
-    }
     [self.accounts removeAllObjects];
 
     if (pjsua_destroy() != PJ_SUCCESS) {
