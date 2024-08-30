@@ -12,8 +12,9 @@
 
 @implementation PjSipEndpoint
 
+static PjSipEndpoint *sharedInstance = nil;
+
 + (instancetype)instance {
-    static PjSipEndpoint *sharedInstance = nil;
     static dispatch_once_t onceToken;
 
     if (!sharedInstance) {
