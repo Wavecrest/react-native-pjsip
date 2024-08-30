@@ -13,10 +13,9 @@
 @implementation PjSipEndpoint
 
 static PjSipEndpoint *sharedInstance = nil;
+static dispatch_once_t onceToken;
 
 + (instancetype)instance {
-    static dispatch_once_t onceToken;
-
     if (!sharedInstance) {
         dispatch_once(&onceToken, ^{
             sharedInstance = [[PjSipEndpoint alloc] init];
@@ -200,6 +199,7 @@ static PjSipEndpoint *sharedInstance = nil;
     self.tcpTransportId = PJSUA_INVALID_ID;
     self.tlsTransportId = PJSUA_INVALID_ID;
     sharedInstance = nil;
+    onceToken = 0;
 }
 
 - (void)updateStunServers:(int)accountId stunServerList:(NSArray *)stunServerList {
