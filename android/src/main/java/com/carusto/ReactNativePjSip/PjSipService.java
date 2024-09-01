@@ -38,6 +38,9 @@ import java.util.Map;
 public class PjSipService extends Service {
 
     private static final String TAG = "PjSipService";
+    private static final String CHANNEL_ID = "PjSipServiceChannel";
+
+    private static boolean isForeground = false;
 
     private boolean mInitialized;
     private HandlerThread mWorkerThread;
@@ -73,30 +76,23 @@ public class PjSipService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
-        Log.w(TAG, "onStartCommand");
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        boolean isPermissionGranted = notificationManager.areNotificationsEnabled();
 
         if (!mInitialized) {
-            Log.w(TAG, "mInitialized");
             if (intent != null && intent.hasExtra("service")) {
                 mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
             }
 
             mWorkerThread = new HandlerThread(getClass().getSimpleName(), Process.THREAD_PRIORITY_FOREGROUND);
-            Log.w(TAG, "mWorkerThread");
             mWorkerThread.setPriority(Thread.MAX_PRIORITY);
             mWorkerThread.start();
             mHandler = new Handler(mWorkerThread.getLooper());
-            Log.w(TAG, "mHandler");
             mEmitter = new PjSipBroadcastEmiter(this);
-            Log.w(TAG, "mEmitter");
             mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
-            Log.w(TAG, "mAudioManager");
             mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
-            Log.w(TAG, "mPowerManager");
             mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            Log.w(TAG, "mWifiManager");
             mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
-            Log.w(TAG, "mWifiLock");
             mWifiLock.setReferenceCounted(false);
 
             IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
@@ -104,7 +100,6 @@ public class PjSipService extends Service {
 
             mInitialized = true;
 
-            Log.w(TAG, "before load");
             try {
                 job(this::load);
             } catch (Exception e) {
@@ -113,11 +108,51 @@ public class PjSipService extends Service {
         }
 
         if (intent != null) {
-            Log.w(TAG, "handle intent");
             job(() -> handle(intent));
         }
 
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        boolean isPermissionGranted = notificationManager.areNotificationsEnabled();
+
+        if (!isForeground && isPermissionGranted) {
+            createNotificationChannel();
+
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                                .setContentTitle(mServiceConfiguration.notificationTitle)
+                                .setContentText(mServiceConfiguration.notificationMessage)
+                                .build();
+
+            startForeground(1, notification);
+            isForeground = true;
+        }
+
+        if (isPermissionGranted && isForeground) {
+            return START_STICKY;
+        }
         return START_NOT_STICKY;
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Define the importance level of the channel
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+
+            // Create the notification channel
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "PJSIP Service Channel",
+                    importance
+            );
+
+            // Optionally configure other properties of the channel
+            serviceChannel.setDescription("This channel is used by PJSIP foreground service");
+
+            // Register the channel with the system
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(serviceChannel);
+            }
+        }
     }
 
     private void load() {

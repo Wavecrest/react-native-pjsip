@@ -12,6 +12,8 @@ import java.util.ArrayList;
 public class ServiceConfigurationDTO {
 
     public String ua;
+    public String notificationTitle;
+    public String notificationMessage;
     public ArrayList<String> stun;
 
     public String getUserAgent() {
@@ -65,6 +67,14 @@ public class ServiceConfigurationDTO {
 
         if (conf.containsKey("stun")) {
             c.stun = (ArrayList) conf.get("stun");
+        }
+
+        if (conf.containsKey("notificationTitle")) {
+            c.notificationTitle = conf.get("notificationTitle").toString();
+        }
+
+        if (conf.containsKey("notificationMessage")) {
+            c.notificationMessage = conf.get("notificationMessage").toString();
         }
 
         return c;
