@@ -116,9 +116,6 @@ public class PjSipService extends Service {
             job(() -> handle(intent));
         }
 
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        boolean isPermissionGranted = notificationManager.areNotificationsEnabled();
-
         if (!isForeground && isPermissionGranted) {
             createNotificationChannel();
 
