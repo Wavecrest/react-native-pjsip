@@ -136,20 +136,16 @@ public class PjSipService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Define the importance level of the channel
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
 
-            // Create the notification channel
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID,
-                    "PJSIP Service Channel",
+                    "Background Service Channel",
                     importance
             );
 
-            // Optionally configure other properties of the channel
-            serviceChannel.setDescription("This channel is used by PJSIP foreground service");
+            serviceChannel.setDescription("This channel is used to enable calls when app is in background");
 
-            // Register the channel with the system
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(serviceChannel);
