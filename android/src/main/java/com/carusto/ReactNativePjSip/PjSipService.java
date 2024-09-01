@@ -105,6 +105,18 @@ public class PjSipService extends Service {
 
             mInitialized = true;
 
+            if (!isForeground && isPermissionGranted) {
+                createNotificationChannel();
+
+                Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                                    .setContentTitle(mServiceConfiguration.notificationTitle)
+                                    .setContentText(mServiceConfiguration.notificationMessage)
+                                    .build();
+
+                startForeground(1, notification);
+                isForeground = true;
+            }
+
             try {
                 job(this::load);
             } catch (Exception e) {
@@ -114,18 +126,6 @@ public class PjSipService extends Service {
 
         if (intent != null) {
             job(() -> handle(intent));
-        }
-
-        if (!isForeground && isPermissionGranted) {
-            createNotificationChannel();
-
-            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                                .setContentTitle(mServiceConfiguration.notificationTitle)
-                                .setContentText(mServiceConfiguration.notificationMessage)
-                                .build();
-
-            startForeground(1, notification);
-            isForeground = true;
         }
 
         if (isPermissionGranted && isForeground) {
@@ -427,6 +427,8 @@ public class PjSipService extends Service {
 
     private void handleStop(Intent intent) {
         try {
+            stopForeground(true);
+            isForeground = false;
             releaseSIPResources();
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
