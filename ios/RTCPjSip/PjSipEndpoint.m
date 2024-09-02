@@ -17,6 +17,7 @@ static dispatch_once_t onceToken;
 
 + (instancetype)instance {
     if (!sharedInstance) {
+    NSLog(@"PJSIP_INSTANCE");
         dispatch_once(&onceToken, ^{
             sharedInstance = [[PjSipEndpoint alloc] init];
         });
@@ -26,6 +27,7 @@ static dispatch_once_t onceToken;
 }
 
 - (instancetype) init {
+    NSLog(@"PJSIP_INIT");
     self = [super init];
     self.accounts = [[NSMutableDictionary alloc] initWithCapacity:12];
     self.calls = [[NSMutableDictionary alloc] initWithCapacity:12];
@@ -188,6 +190,7 @@ static dispatch_once_t onceToken;
 
 
 - (void)stop {
+    NSLog(@"PJSIP_STOP");
     [self.calls removeAllObjects];
     [self.accounts removeAllObjects];
 
