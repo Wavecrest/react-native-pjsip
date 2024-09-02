@@ -13,14 +13,13 @@
 @implementation PjSipEndpoint
 
 static PjSipEndpoint *sharedInstance = nil;
-static dispatch_once_t onceToken;
 
 + (instancetype)instance {
     if (!sharedInstance) {
-    NSLog(@"PJSIP_INSTANCE");
-        dispatch_once(&onceToken, ^{
-            sharedInstance = [[PjSipEndpoint alloc] init];
-        });
+        @synchronized(self) {
+          NSLog(@"PJSIP_INSTANCE");
+          sharedInstance = [[PjSipEndpoint alloc] init];
+        }
     }
 
     return sharedInstance;
@@ -202,7 +201,6 @@ static dispatch_once_t onceToken;
     self.tcpTransportId = PJSUA_INVALID_ID;
     self.tlsTransportId = PJSUA_INVALID_ID;
     sharedInstance = nil;
-    onceToken = 0;
 }
 
 - (void)updateStunServers:(int)accountId stunServerList:(NSArray *)stunServerList {
@@ -226,18 +224,22 @@ static dispatch_once_t onceToken;
 
 - (PjSipAccount *)createAccount:(NSDictionary *)config {
     PjSipAccount *account = [PjSipAccount itemConfig:config];
-    self.accounts[@(account.id)] = account;
-
+    @synchronized(self) {
+      self.accounts[@(account.id)] = account;
+    }
     return account;
 }
 
 - (void)deleteAccount:(int) accountId {
-    // TODO: Destroy function ?
-    if (self.accounts[@(accountId)] == nil) {
-        [NSException raise:@"Failed to delete account" format:@"Account with %@ id not found", @(accountId)];
+    @synchronized(self) {
+      if (self.accounts[@(accountId)] == nil) {
+          [NSException raise:@"Failed to delete account" format:@"Account with %@ id not found", @(accountId)];
+      }
     }
 
-    [self.accounts removeObjectForKey:@(accountId)];
+    @synchronized(self) {
+      [self.accounts removeObjectForKey:@(accountId)];
+    }
 }
 
 - (PjSipAccount *) findAccount: (int) accountId {
@@ -396,7 +398,9 @@ static dispatch_once_t onceToken;
 }
 
 -(void)emmitEvent:(NSString*) name body:(id)body {
-    [[self.bridge eventDispatcher] sendAppEventWithName:name body:body];
+     dispatch_async(dispatch_get_main_queue(), ^{
+        [[self.bridge eventDispatcher] sendAppEventWithName:name body:body];
+    });
 }
 
 
