@@ -114,7 +114,7 @@ public class PjSipService extends Service {
                                     .setContentText(mServiceConfiguration.notificationMessage)
                                     .build();
 
-                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
                 isForeground = true;
             }
 
