@@ -17,7 +17,6 @@ static PjSipEndpoint *sharedInstance = nil;
 + (instancetype)instance {
     if (!sharedInstance) {
         @synchronized(self) {
-          NSLog(@"PJSIP_INSTANCE");
           sharedInstance = [[PjSipEndpoint alloc] init];
         }
     }
@@ -26,7 +25,6 @@ static PjSipEndpoint *sharedInstance = nil;
 }
 
 - (instancetype) init {
-    NSLog(@"PJSIP_INIT");
     self = [super init];
     self.accounts = [[NSMutableDictionary alloc] initWithCapacity:12];
     self.calls = [[NSMutableDictionary alloc] initWithCapacity:12];
@@ -189,7 +187,6 @@ static PjSipEndpoint *sharedInstance = nil;
 
 
 - (void)stop {
-    NSLog(@"PJSIP_STOP");
     [self.calls removeAllObjects];
     [self.accounts removeAllObjects];
 
