@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ServiceInfo;
 import android.media.AudioManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -113,7 +114,7 @@ public class PjSipService extends Service {
                                     .setContentText(mServiceConfiguration.notificationMessage)
                                     .build();
 
-                startForeground(1, notification);
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
                 isForeground = true;
             }
 
