@@ -500,8 +500,8 @@ static void onCallMediaEvent(pjsua_call_id call_id,
     if (event->type == PJMEDIA_EVENT_FMT_CHANGED) {
         /* Adjust renderer window size to original video size */
         pjsua_call_info ci;
-        pjsua_vid_win_id wid;
-        pjmedia_rect_size size;
+//         pjsua_vid_win_id wid;
+//         pjmedia_rect_size size;
 
         pjsua_call_get_info(call_id, &ci);
 
