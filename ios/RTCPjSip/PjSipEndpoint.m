@@ -198,7 +198,11 @@ static PjSipEndpoint *sharedInstance = nil;
     self.tcpTransportId = PJSUA_INVALID_ID;
     self.tlsTransportId = PJSUA_INVALID_ID;
     sharedInstance = nil;
+    NSError *error = nil;
     [[AVAudioSession sharedInstance] setActive:NO error:&error];
+    if (error) {
+        NSLog(@"Error deactivating audio session: %@", error);
+    }
 }
 
 - (void)updateStunServers:(int)accountId stunServerList:(NSArray *)stunServerList {
