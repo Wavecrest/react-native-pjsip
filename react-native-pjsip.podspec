@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
     'GCC_PREPROCESSOR_DEFINITIONS' => 'PJ_AUTOCONF=1',
     'USE_HEADERMAP' => 'NO',
   }
+
   s.dependency 'React'
+  s.dependency 'Reachability', '~> 3.2'
 end
-
-
