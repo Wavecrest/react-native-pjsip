@@ -284,7 +284,10 @@ static PjSipEndpoint *sharedInstance = nil;
         NSLog(@"Error setting audio session mode: %@", error);
     }
 
-    [audioSession setActive:YES error:&error];
+    BOOL success = [audioSession setActive:YES error:&error];
+    if (!success) {
+        NSLog(@"Audio session activation failed: %@", error);
+    }
     if (error) {
         NSLog(@"Error activating audio session: %@", error);
     }
