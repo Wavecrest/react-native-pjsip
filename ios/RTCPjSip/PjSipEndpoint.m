@@ -164,7 +164,10 @@ static PjSipEndpoint *sharedInstance = nil;
 - (void)networkChanged:(NSNotification *)notification {
     NetworkStatus netStatus = [reachability currentReachabilityStatus];
 
-    pj_status_t status = pjsua_handle_ip_change(PJSUA_IP_CHANGE_OP_REINIT);
+    pjsua_ip_change_param ip_change_param;
+    ip_change_param.restart_listener = PJ_TRUE;
+    ip_change_param.restart_lis_delay = PJSUA_TRANSPORT_RESTART_DELAY_TIME;
+    pj_status_t status = pjsua_handle_ip_change(&ip_change_param);
     if (status != PJ_SUCCESS) {
         NSLog(@"Failed to handle IP change: %d", status);
     } else {
