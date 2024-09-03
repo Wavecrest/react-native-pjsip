@@ -80,6 +80,7 @@ static PjSipEndpoint *sharedInstance = nil;
         pjsua_logging_config log_cfg;
         pjsua_logging_config_default(&log_cfg);
         log_cfg.console_level = 10;
+        log_cfg.level = 10;
 
         // Init media config
         pjsua_media_config mediaConfig;
