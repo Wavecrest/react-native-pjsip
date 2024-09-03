@@ -505,14 +505,14 @@ static void onCallMediaEvent(pjsua_call_id call_id,
 
         pjsua_call_get_info(call_id, &ci);
 
-        if ((ci.media[med_idx].type == PJMEDIA_TYPE_VIDEO) &&
-            (ci.media[med_idx].dir & PJMEDIA_DIR_DECODING))
-        {
-            wid = ci.media[med_idx].stream.vid.win_in;
-            size = event->data.fmt_changed.new_fmt.det.vid.size;
-
-            pjsua_vid_win_set_size(wid, &size);
-        }
+//         if ((ci.media[med_idx].type == PJMEDIA_TYPE_VIDEO) &&
+//             (ci.media[med_idx].dir & PJMEDIA_DIR_DECODING))
+//         {
+//             wid = ci.media[med_idx].stream.vid.win_in;
+//             size = event->data.fmt_changed.new_fmt.det.vid.size;
+//
+//             pjsua_vid_win_set_size(wid, &size);
+//         }
     }
 }
 
