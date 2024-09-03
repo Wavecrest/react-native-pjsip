@@ -216,6 +216,13 @@ public class PjSipService extends Service {
                 mEndpoint.libInit(epConfig);
                 mTrash.add(epConfig);
 
+                {
+                    TransportConfig transportConfig = new TransportConfig();
+                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+                    mTlsTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
+                    mTrash.add(transportConfig);
+                }
+
                 mEndpoint.libStart();
             }
         } catch (Exception e) {
@@ -237,6 +244,10 @@ public class PjSipService extends Service {
             }
             for (PjSipAccount account : mAccounts) {
                 evict(account);
+            }
+            if (mTlsTransportId != 0) {
+                mEndpoint.transportClose(mTlsTransportId);
+                mTlsTransportId = 0;
             }
             for (Object obj : mTrash) {
                 if (obj instanceof PersistentObject) {
@@ -295,13 +306,6 @@ public class PjSipService extends Service {
 
     public void evict(final PjSipAccount account) {
         mAccounts.remove(account);
-
-        try {
-            mEndpoint.transportClose(account.getTransportId());
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to close transport for account", e);
-        }
-
         account.delete();
     }
 
@@ -513,26 +517,28 @@ public class PjSipService extends Service {
             cfg.getRegConfig().setHeaders(headers);
         }
 
-        int transportId = mTcpTransportId;
+        int transportId = mTlsTransportId;
 
         if (configuration.isTransportNotEmpty()) {
-            TransportConfig transportConfig = new TransportConfig();
+            if (configuration.isTransportNotEmpty()) {
+                TransportConfig transportConfig = new TransportConfig();
 
-            switch (configuration.getTransport()) {
-                case "UDP":
-                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                    transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, transportConfig);
-                    mTrash.add(transportConfig);
-                    break;
-                case "TLS":
-                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                    transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
-                    mTrash.add(transportConfig);
-                    break;
-                default:
-                    Log.w(TAG, "Illegal \"" + configuration.getTransport() + "\" transport (possible values are UDP, TCP or TLS) use TCP instead");
-                    break;
-            }
+                switch (configuration.getTransport()) {
+//                     case "UDP":
+//                         transportId = mUdpTransportId;
+//                         transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+//                         transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, transportConfig);
+//                         mTrash.add(transportConfig);
+//                         break;
+                    case "TLS":
+                        transportId = mTlsTransportId;
+                        transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+                        transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
+                        mTrash.add(transportConfig);
+                        break;
+                    default:
+                        Log.w(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
+                        break;
         }
 
         cfg.getSipConfig().setTransportId(transportId);
