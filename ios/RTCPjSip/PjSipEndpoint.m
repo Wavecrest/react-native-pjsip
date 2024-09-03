@@ -97,36 +97,36 @@ static PjSipEndpoint *sharedInstance = nil;
     }
 
     // Add UDP transport.
-    {
-        // Init transport config structure
-        pjsua_transport_config cfg;
-        pjsua_transport_config_default(&cfg);
-        pjsua_transport_id id;
-
-        // Add TCP transport.
-        status = pjsua_transport_create(PJSIP_TRANSPORT_UDP, &cfg, &id);
-
-        if (status != PJ_SUCCESS) {
-            NSLog(@"Error creating UDP transport");
-        } else {
-            self.udpTransportId = id;
-        }
-    }
-
-    // Add TCP transport.
-    {
-        pjsua_transport_config cfg;
-        pjsua_transport_config_default(&cfg);
-        pjsua_transport_id id;
-
-        status = pjsua_transport_create(PJSIP_TRANSPORT_TCP, &cfg, &id);
-
-        if (status != PJ_SUCCESS) {
-            NSLog(@"Error creating TCP transport");
-        } else {
-            self.tcpTransportId = id;
-        }
-    }
+//     {
+//         // Init transport config structure
+//         pjsua_transport_config cfg;
+//         pjsua_transport_config_default(&cfg);
+//         pjsua_transport_id id;
+//
+//         // Add TCP transport.
+//         status = pjsua_transport_create(PJSIP_TRANSPORT_UDP, &cfg, &id);
+//
+//         if (status != PJ_SUCCESS) {
+//             NSLog(@"Error creating UDP transport");
+//         } else {
+//             self.udpTransportId = id;
+//         }
+//     }
+//
+//     // Add TCP transport.
+//     {
+//         pjsua_transport_config cfg;
+//         pjsua_transport_config_default(&cfg);
+//         pjsua_transport_id id;
+//
+//         status = pjsua_transport_create(PJSIP_TRANSPORT_TCP, &cfg, &id);
+//
+//         if (status != PJ_SUCCESS) {
+//             NSLog(@"Error creating TCP transport");
+//         } else {
+//             self.tcpTransportId = id;
+//         }
+//     }
 
     // Add TLS transport.
     {
@@ -198,6 +198,7 @@ static PjSipEndpoint *sharedInstance = nil;
     self.tcpTransportId = PJSUA_INVALID_ID;
     self.tlsTransportId = PJSUA_INVALID_ID;
     sharedInstance = nil;
+    [[AVAudioSession sharedInstance] setActive:NO error:&error];
 }
 
 - (void)updateStunServers:(int)accountId stunServerList:(NSArray *)stunServerList {
@@ -264,7 +265,26 @@ static PjSipEndpoint *sharedInstance = nil;
     pjsua_call_id callId;
     pj_str_t callDest = pj_str((char *) [destination UTF8String]);
 
-    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord error:nil];
+    NSError *error = nil;
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+
+    [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
+                  withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker | AVAudioSessionCategoryOptionAllowBluetooth
+                        error:&error];
+    if (error) {
+        NSLog(@"Error setting audio session category: %@", error);
+    }
+
+    [audioSession setMode:AVAudioSessionModeVoiceChat error:&error];
+    if (error) {
+        NSLog(@"Error setting audio session mode: %@", error);
+    }
+
+    [audioSession setActive:YES error:&error];
+    if (error) {
+        NSLog(@"Error activating audio session: %@", error);
+    }
+
     self.isSpeaker = false;
 
     pj_status_t status = pjsua_call_make_call(account.id, &callDest, &callSettings, NULL, &msgData, &callId);
@@ -301,10 +321,15 @@ static PjSipEndpoint *sharedInstance = nil;
 
 -(void)useSpeaker {
     self.isSpeaker = true;
-
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
-    [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:nil];
+    NSError *error = nil;
 
+    [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:&error];
+    if (error) {
+        NSLog(@"Error overriding audio port to speaker: %@", error);
+    }
+
+    // Additional code to emit call changed events
     for (NSString *key in self.calls) {
         PjSipCall *call = self.calls[key];
         [self emmitCallChanged:call];
@@ -313,10 +338,15 @@ static PjSipEndpoint *sharedInstance = nil;
 
 -(void)useEarpiece {
     self.isSpeaker = false;
-
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
-    [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:nil];
+    NSError *error = nil;
 
+    [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:&error];
+    if (error) {
+        NSLog(@"Error overriding audio port to earpiece: %@", error);
+    }
+
+    // Additional code to emit call changed events
     for (NSString *key in self.calls) {
         PjSipCall *call = self.calls[key];
         [self emmitCallChanged:call];
