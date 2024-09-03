@@ -6,11 +6,15 @@
 #import <React/RCTUtils.h>
 #import <VialerPJSIP/pjsua.h>
 
+#import "Reachability.h"
+
 #import "PjSipUtil.h"
 #import "PjSipEndpoint.h"
 #import "PjSipMessage.h"
 
-@implementation PjSipEndpoint
+@implementation PjSipEndpoint {
+    Reachability *reachability;
+}
 
 static PjSipEndpoint *sharedInstance = nil;
 
@@ -148,7 +152,29 @@ static PjSipEndpoint *sharedInstance = nil;
     status = pjsua_start();
     if (status != PJ_SUCCESS) NSLog(@"Error starting pjsua");
 
+    reachability = [Reachability reachabilityForInternetConnection];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(networkChanged:)
+                                                 name:kReachabilityChangedNotification
+                                               object:nil];
+    [reachability startNotifier];
+
     return self;
+}
+
+- (void)networkChanged:(NSNotification *)notification {
+    NetworkStatus netStatus = [reachability currentReachabilityStatus];
+
+    pj_status_t status = pjsua_handle_ip_change(PJSUA_IP_CHANGE_OP_REINIT);
+    if (status != PJ_SUCCESS) {
+        NSLog(@"Failed to handle IP change: %d", status);
+    } else {
+        NSLog(@"IP change handled successfully");
+    }
+
+    for (NSNumber *key in self.accounts) {
+        pjsua_acc_set_registration([key intValue], PJ_TRUE);
+    }
 }
 
 - (NSDictionary *)start: (NSDictionary *)config {
@@ -200,6 +226,7 @@ static PjSipEndpoint *sharedInstance = nil;
     self.tlsTransportId = PJSUA_INVALID_ID;
     sharedInstance = nil;
     NSError *error = nil;
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     [[AVAudioSession sharedInstance] setActive:NO error:&error];
     if (error) {
         NSLog(@"Error deactivating audio session: %@", error);
@@ -535,6 +562,10 @@ static void onMessageReceived(pjsua_call_id call_id, const pj_str_t *from,
     PjSipMessage* message = [PjSipMessage itemConfig:data];
 
     [endpoint emmitMessageReceived:message];
+}
+
+- (void)dealloc {
+    [self stop];
 }
 
 @end
