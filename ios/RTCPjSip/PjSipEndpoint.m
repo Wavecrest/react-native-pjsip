@@ -249,7 +249,7 @@ static PjSipEndpoint *sharedInstance = nil;
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
 
     [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
-                  withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker | AVAudioSessionCategoryOptionAllowBluetooth
+                  withOptions:AVAudioSessionCategoryOptionAllowBluetooth
                         error:&error];
     if (error) {
         NSLog(@"Error setting audio session category: %@", error);
@@ -267,7 +267,10 @@ static PjSipEndpoint *sharedInstance = nil;
     if (error) {
         NSLog(@"Error activating audio session: %@", error);
     }
-
+    [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:&error];
+    if (error) {
+        NSLog(@"Error using earpiece: %@", error);
+    }
     self.isSpeaker = false;
 
     pjsua_call_setting callSettings;
