@@ -48,7 +48,7 @@
 
     // TODO: Audio/Video count configuration!
     callOpt.aud_cnt = 1;
-    callOpt.vid_cnt = 1;
+    callOpt.vid_cnt = 0;
 
     pjsua_call_answer2(self.id, &callOpt, 200, NULL, &msgData);
 }
@@ -75,20 +75,23 @@
     pjsua_call_reinvite(self.id, PJSUA_CALL_UNHOLD, NULL);
 }
 
+
 - (void)mute {
     pjsua_call_info info;
     pjsua_call_get_info(self.id, &info);
 
     @try {
-        if( info.conf_slot != 0 ) {
-            NSLog(@"WC_SIPServer microphone disconnected from call");
-            pjsua_conf_disconnect(0, info.conf_slot);
-
-            self.isMuted = true;
+        if (info.conf_slot != 0) {
+            pj_status_t status = pjsua_conf_disconnect(0, info.conf_slot);
+            if (status == PJ_SUCCESS) {
+                self.isMuted = true;
+                NSLog(@"Muted call with ID %d", self.id);
+            } else {
+                NSLog(@"Failed to mute call with ID %d. Error code: %d", self.id, status);
+            }
         }
-    }
-    @catch (NSException *exception) {
-        NSLog(@"Unable to mute microphone: %@", exception);
+    } @catch (NSException *exception) {
+        NSLog(@"Exception occurred while muting call with ID %d: %@", self.id, exception);
     }
 }
 
@@ -97,15 +100,17 @@
     pjsua_call_get_info(self.id, &info);
 
     @try {
-        if( info.conf_slot != 0 ) {
-            NSLog(@"WC_SIPServer microphone reconnected to call");
-            pjsua_conf_connect(0, info.conf_slot);
-
-            self.isMuted = false;
+        if (info.conf_slot != 0) {
+            pj_status_t status = pjsua_conf_connect(0, info.conf_slot);
+            if (status == PJ_SUCCESS) {
+                self.isMuted = false;
+                NSLog(@"Unmuted call with ID %d", self.id);
+            } else {
+                NSLog(@"Failed to unmute call with ID %d. Error code: %d", self.id, status);
+            }
         }
-    }
-    @catch (NSException *exception) {
-        NSLog(@"Unable to un-mute microphone: %@", exception);
+    } @catch (NSException *exception) {
+        NSLog(@"Exception occurred while unmuting call with ID %d: %@", self.id, exception);
     }
 }
 
@@ -153,8 +158,21 @@
     pjsua_call_media_status status = info.media_status;
 
     if (status == PJSUA_CALL_MEDIA_ACTIVE || status == PJSUA_CALL_MEDIA_REMOTE_HOLD) {
-        pjsua_conf_connect(info.conf_slot, 0);
-        pjsua_conf_connect(0, info.conf_slot);
+        pj_status_t status = pjsua_conf_connect(info.conf_slot, 0);
+        if (status == PJ_SUCCESS) {
+            NSLog(@"Successfully connected call with ID %d to sound device.", self.id);
+        } else {
+            NSLog(@"Failed to connect call with ID %d to sound device. Error code: %d", self.id, status);
+        }
+
+        status = pjsua_conf_connect(0, info.conf_slot);
+        if (status == PJ_SUCCESS) {
+            NSLog(@"Successfully connected sound device to call with ID %d.", self.id);
+        } else {
+            NSLog(@"Failed to connect sound device to call with ID %d. Error code: %d", self.id, status);
+        }
+    } else {
+        NSLog(@"Media is not active for call with ID %d. Status: %d", self.id, status);
     }
 }
 
