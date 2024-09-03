@@ -5,8 +5,7 @@
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
 #import <VialerPJSIP/pjsua.h>
-
-#import "Reachability.h"
+#import <Reachability/Reachability.h>
 
 #import "PjSipUtil.h"
 #import "PjSipEndpoint.h"
