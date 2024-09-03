@@ -532,6 +532,7 @@ public class PjSipService extends Service {
                 default:
                     Log.w(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
                     break;
+            }
         }
 
         cfg.getSipConfig().setTransportId(transportId);
