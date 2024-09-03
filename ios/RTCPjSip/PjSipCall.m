@@ -236,8 +236,6 @@
     if (pjsua_call_is_active(self.id)) {
         [self hangup];
     }
-
-    [super dealloc];
 }
 
 @end
