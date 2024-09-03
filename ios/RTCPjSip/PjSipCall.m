@@ -29,6 +29,8 @@
 
     if (status != PJ_SUCCESS) {
         NSLog(@"Failed to hangup a call (%d)", status);
+    } else {
+        NSLog(@"Hangup a call (%d)", status);
     }
 }
 
@@ -250,7 +252,6 @@
 
 - (void)dealloc {
     NSLog(@"Deallocating PjSipCall with ID: %d", self.id);
-
     if (pjsua_call_is_active(self.id)) {
         [self hangup];
     }
