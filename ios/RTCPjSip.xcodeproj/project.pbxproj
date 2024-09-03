@@ -278,6 +278,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../react-native/React/**",
 					"\"$(SRCROOT)/VialerPJSIP/Headers\"",
+					"$(PODS_ROOT)/Reachability",
 				);
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "";
 				LIBRARY_SEARCH_PATHS = (
@@ -303,6 +304,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../react-native/React/**",
 					"\"$(SRCROOT)/VialerPJSIP/Headers\"",
+					"$(PODS_ROOT)/Reachability",
 				);
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "";
 				LIBRARY_SEARCH_PATHS = (
