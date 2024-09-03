@@ -520,25 +520,18 @@ public class PjSipService extends Service {
         int transportId = mTlsTransportId;
 
         if (configuration.isTransportNotEmpty()) {
-            if (configuration.isTransportNotEmpty()) {
-                TransportConfig transportConfig = new TransportConfig();
+            TransportConfig transportConfig = new TransportConfig();
 
-                switch (configuration.getTransport()) {
-//                     case "UDP":
-//                         transportId = mUdpTransportId;
-//                         transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-//                         transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, transportConfig);
-//                         mTrash.add(transportConfig);
-//                         break;
-                    case "TLS":
-                        transportId = mTlsTransportId;
-                        transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                        transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
-                        mTrash.add(transportConfig);
-                        break;
-                    default:
-                        Log.w(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
-                        break;
+            switch (configuration.getTransport()) {
+                case "TLS":
+                    transportId = mTlsTransportId;
+                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+                    transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
+                    mTrash.add(transportConfig);
+                    break;
+                default:
+                    Log.w(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
+                    break;
         }
 
         cfg.getSipConfig().setTransportId(transportId);
