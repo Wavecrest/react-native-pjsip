@@ -261,7 +261,7 @@ public class PjSipService extends Service {
         }
     }
 
-    public synchronized void releaseSIPResources() {
+    public void releaseSIPResources() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
@@ -270,7 +270,11 @@ public class PjSipService extends Service {
         }
 
         try {
-            unregisterReceiver(networkChangeReceiver);
+            if (networkChangeReceiver != null) {
+              unregisterReceiver(networkChangeReceiver);
+              networkChangeReceiver = null;
+            }
+
             for (PjSipCall call : mCalls) {
                 evict(call);
             }
@@ -302,6 +306,7 @@ public class PjSipService extends Service {
                 mEndpoint.libDestroy();
                 mEndpoint.delete();
                 mEndpoint = null;
+                mRegisteredThread = null;
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to destroy PjSip library", e);
