@@ -152,7 +152,7 @@ public class PjSipService extends Service {
         return START_NOT_STICKY;
     }
 
-    public synchronized void handleIpChange() {
+    public void handleIpChange() {
         try {
             mEmitter.fireIpChanged();
             IpChangeParam ipChangeParam = new IpChangeParam();
