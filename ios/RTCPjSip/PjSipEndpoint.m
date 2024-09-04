@@ -162,6 +162,7 @@ static PjSipEndpoint *sharedInstance = nil;
 }
 
 - (void)networkChanged:(NSNotification *)notification {
+    Log.w(TAG, "[self emmitIpChanged]");
     [self emmitIpChanged]
     NetworkStatus netStatus = [reachability currentReachabilityStatus];
 
@@ -173,6 +174,7 @@ static PjSipEndpoint *sharedInstance = nil;
         NSLog(@"Failed to handle IP change: %d", status);
     } else {
         NSLog(@"IP change handled successfully");
+        Log.w(TAG, "[self emmitIpTransitioned]");
         [self emmitIpTransitioned]
     }
 }
