@@ -405,7 +405,7 @@ public class PjSipService extends Service {
                 }
             }
 
-            CodecInfoVector codVect = mEndpoint.codecEnum2();
+            CodecInfoVector2 codVect = mEndpoint.codecEnum2();
             JSONObject codecs = new JSONObject();
 
             for (int i = 0; i < codVect.size(); i++) {
