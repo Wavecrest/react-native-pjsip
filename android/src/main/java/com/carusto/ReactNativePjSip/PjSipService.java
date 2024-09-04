@@ -107,10 +107,6 @@ public class PjSipService extends Service {
             IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
             registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter);
 
-            networkChangeReceiver = new NetworkChangeReceiver(this);
-            IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-            registerReceiver(networkChangeReceiver, filter);
-
             mInitialized = true;
 
             if (!isForeground && isPermissionGranted) {
@@ -246,6 +242,9 @@ public class PjSipService extends Service {
                 }
 
                 mEndpoint.libStart();
+                networkChangeReceiver = new NetworkChangeReceiver(this);
+                IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+                registerReceiver(networkChangeReceiver, filter);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
