@@ -186,8 +186,6 @@ public class PjSipService extends Service {
             if (mEndpoint == null) {
                 mEndpoint = new Endpoint();
                 Log.w(TAG, "mEndpoint = new Endpoint();");
-                mEndpoint.libCreate();
-                Log.w(TAG, "mEndpoint.libCreate();");
 
                 // Register the main thread once
                 if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
@@ -195,18 +193,8 @@ public class PjSipService extends Service {
                     mRegisteredThread = Thread.currentThread().getName();
                 }
 
-                Handler uiHandler = new Handler(Looper.getMainLooper());
-                uiHandler.post(() -> {
-                    try {
-                        if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
-                            mEndpoint.libRegisterThread(Thread.currentThread().getName());
-                            mRegisteredThread = Thread.currentThread().getName();
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error registering UI thread", e);
-                    }
-                });
-
+                mEndpoint.libCreate();
+                Log.w(TAG, "mEndpoint.libCreate();");
                 // Configure endpoint
                 EpConfig epConfig = new EpConfig();
                 epConfig.getLogConfig().setLevel(10);
@@ -242,12 +230,11 @@ public class PjSipService extends Service {
                     mTrash.add(transportConfig);
                 }
                 Log.w(TAG, "mTrash.add(transportConfig);");
-
                 mEndpoint.libStart();
                 Log.w(TAG, "mEndpoint.libStart();");
-//                 networkChangeReceiver = new NetworkChangeReceiver(this);
-//                 IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-//                 registerReceiver(networkChangeReceiver, filter);
+                networkChangeReceiver = new NetworkChangeReceiver(this);
+                IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+                registerReceiver(networkChangeReceiver, filter);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
@@ -262,9 +249,8 @@ public class PjSipService extends Service {
             }
         }
 
-        unregisterReceiver(networkChangeReceiver);
-
         try {
+            unregisterReceiver(networkChangeReceiver);
             for (PjSipCall call : mCalls) {
                 evict(call);
             }
