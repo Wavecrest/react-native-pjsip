@@ -201,15 +201,16 @@ public class PjSipService extends Service {
             if (mEndpoint == null) {
                 mEndpoint = new Endpoint();
                 Log.w(TAG, "mEndpoint = new Endpoint();");
+                mEndpoint.libCreate();
+                Log.w(TAG, "mEndpoint.libCreate();");
 
                 // Register the main thread once
                 if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
-                    mEndpoint.libRegisterThread(Thread.currentThread().getName());
                     mRegisteredThread = Thread.currentThread().getName();
+                    mEndpoint.libRegisterThread(mRegisteredThread);
+                    Log.w(TAG, "mEndpoint.libRegisterThread(mRegisteredThread);");
                 }
 
-                mEndpoint.libCreate();
-                Log.w(TAG, "mEndpoint.libCreate();");
                 // Configure endpoint
                 EpConfig epConfig = new EpConfig();
                 epConfig.getLogConfig().setLevel(10);
