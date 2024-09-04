@@ -162,6 +162,7 @@ static PjSipEndpoint *sharedInstance = nil;
 }
 
 - (void)networkChanged:(NSNotification *)notification {
+    [self emmitIpChanged]
     NetworkStatus netStatus = [reachability currentReachabilityStatus];
 
     pjsua_ip_change_param ip_change_param;
@@ -172,10 +173,7 @@ static PjSipEndpoint *sharedInstance = nil;
         NSLog(@"Failed to handle IP change: %d", status);
     } else {
         NSLog(@"IP change handled successfully");
-    }
-
-    for (NSNumber *key in self.accounts) {
-        pjsua_acc_set_registration([key intValue], PJ_TRUE);
+        [self emmitIpTransitioned]
     }
 }
 
@@ -439,6 +437,14 @@ static PjSipEndpoint *sharedInstance = nil;
 
 -(void)emmitRegistrationChanged:(PjSipAccount*) account {
     [self emmitEvent:@"pjSipRegistrationChanged" body:[account toJsonDictionary]];
+}
+
+-(void)emmitIpChanged {
+    [self emmitEvent:@"pjSipIpChanged" body:[]];
+}
+
+-(void)emmitIpTransitioned {
+    [self emmitEvent:@"pjSipIpTransitioned" body:[]];
 }
 
 -(void)emmitCallReceived:(PjSipCall*) call {

@@ -69,6 +69,12 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
             case PjActions.EVENT_REGISTRATION_CHANGED:
                 onRegistrationChanged(intent);
                 break;
+            case PjActions.EVENT_IP_CHANGED:
+                onIpChanged(intent);
+                break;
+            case PjActions.EVENT_IP_TRANSITIONED:
+                onIpTransitioned(intent);
+                break;
             case PjActions.EVENT_MESSAGE_RECEIVED:
                 onMessageReceived(intent);
                 break;
@@ -91,6 +97,18 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
         String json = intent.getStringExtra("data");
         Object params = ArgumentUtils.fromJson(json);
         emit("pjSipRegistrationChanged", params);
+    }
+
+    private void onIpChanged(Intent intent) {
+        String json = intent.getStringExtra("data");
+        Object params = ArgumentUtils.fromJson(json);
+        emit("pjSipIpChanged", params);
+    }
+
+    private void onIpTransitioned(Intent intent) {
+        String json = intent.getStringExtra("data");
+        Object params = ArgumentUtils.fromJson(json);
+        emit("pjSipIpTransitioned", params);
     }
 
     private void onMessageReceived(Intent intent) {

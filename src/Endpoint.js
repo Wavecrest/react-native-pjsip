@@ -51,6 +51,8 @@ export default class Endpoint extends EventEmitter {
 
         // Subscribe to Accounts events
         DeviceEventEmitter.addListener('pjSipRegistrationChanged', this._onRegistrationChanged.bind(this));
+        DeviceEventEmitter.addListener('pjSipIpChanged', this._onIpChanged.bind(this));
+        DeviceEventEmitter.addListener('pjSipIpTransitioned', this._onIpTransitioned.bind(this));
 
         // Subscribe to Calls events
         DeviceEventEmitter.addListener('pjSipCallReceived', this._onCallReceived.bind(this));
@@ -585,6 +587,24 @@ export default class Endpoint extends EventEmitter {
          * @property {Account} account
          */
         this.emit("registration_changed", new Account(data));
+    }
+
+    _onIpChanged() {
+        /**
+         * Fires when ip changed
+         *
+         * @event Endpoint#ip_changed
+         */
+        this.emit("ip_changed");
+    }
+
+    _onIpTransitioned() {
+        /**
+         * Fires when sip transitioned to new ip
+         *
+         * @event Endpoint#ip_transitioned
+         */
+        this.emit("ip_transitioned");
     }
 
     /**
