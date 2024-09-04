@@ -48,6 +48,7 @@ public class PjSipService extends Service {
     private static final String CHANNEL_ID = "PjSipServiceChannel";
 
     private static boolean isForeground = false;
+    private boolean isLoaded = false;
 
     private boolean mInitialized;
     private HandlerThread mWorkerThread;
@@ -124,14 +125,28 @@ public class PjSipService extends Service {
             }
 
             try {
-                job(this::load);
+                job(() -> {
+                    load();
+                    isLoaded = true;
+                });
             } catch (Exception e) {
                 Log.e(TAG, "Exception during job(this::load)", e);
             }
         }
 
         if (intent != null) {
-            job(() -> handle(intent));
+            job(() -> {
+                synchronized (this) {
+                    while (!isLoaded) {
+                        try {
+                            wait();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                    handle(intent);
+                }
+            });
         }
 
         if (isPermissionGranted && isForeground) {
@@ -235,6 +250,7 @@ public class PjSipService extends Service {
                 networkChangeReceiver = new NetworkChangeReceiver(this);
                 IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
                 registerReceiver(networkChangeReceiver, filter);
+                notifyAll();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
