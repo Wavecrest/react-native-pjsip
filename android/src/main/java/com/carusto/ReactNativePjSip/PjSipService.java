@@ -71,6 +71,8 @@ public class PjSipService extends Service {
 
     private BroadcastReceiver mPhoneStateChangedReceiver = new PhoneStateChangedReceiver();
 
+    private NetworkChangeReceiver networkChangeReceiver;
+
     public PjSipBroadcastEmiter getEmitter() {
         return mEmitter;
     }
@@ -104,14 +106,21 @@ public class PjSipService extends Service {
             IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
             registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter);
 
+            networkChangeReceiver = new NetworkChangeReceiver(this);
+            IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+            registerReceiver(networkChangeReceiver, filter);
+
             mInitialized = true;
 
             if (!isForeground && isPermissionGranted) {
                 createNotificationChannel();
 
                 Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                                    .setStyle(new NotificationCompat.BigTextStyle().bigText(mServiceConfiguration.notificationMessage))
                                     .setContentTitle(mServiceConfiguration.notificationTitle)
-                                    .setContentText(mServiceConfiguration.notificationMessage)
+                                    .setSmallIcon(R.mipmap.ic_launcher)
+                                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                                    .setOngoing(true)
                                     .build();
 
                 startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
@@ -135,16 +144,25 @@ public class PjSipService extends Service {
         return START_NOT_STICKY;
     }
 
+    public void handleIpChange() {
+        IpChangeParam ipChangeParam = new IpChangeParam();
+        ipChangeParam.setRestartListener(true);
+        mEndpoint.handleIpChange(ipChangeParam);
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
 
             NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Background Service Channel",
-                    importance
+                CHANNEL_ID,
+                "Background Service Channel",
+                importance
             );
 
+            serviceChannel.setSound(null, null);
+            serviceChannel.enableVibration(false);
+            serviceChannel.setShowBadge(false);
             serviceChannel.setDescription("This channel is used to enable calls when app is in background");
 
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -237,6 +255,8 @@ public class PjSipService extends Service {
                 mWorkerThread = null;
             }
         }
+
+        unregisterReceiver(networkChangeReceiver);
 
         try {
             for (PjSipCall call : mCalls) {
