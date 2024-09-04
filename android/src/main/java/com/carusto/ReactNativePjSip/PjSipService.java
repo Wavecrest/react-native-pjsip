@@ -114,11 +114,11 @@ public class PjSipService extends Service {
 
             if (!isForeground && isPermissionGranted) {
                 createNotificationChannel();
-
+                Context parentContext = context.getApplicationContext();
                 Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                                     .setStyle(new NotificationCompat.BigTextStyle().bigText(mServiceConfiguration.notificationMessage))
                                     .setContentTitle(mServiceConfiguration.notificationTitle)
-                                    .setSmallIcon(R.mipmap.ic_launcher)
+                                    .setSmallIcon(parentContext.getApplicationInfo().icon)
                                     .setPriority(NotificationCompat.PRIORITY_LOW)
                                     .setOngoing(true)
                                     .build();
