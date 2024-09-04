@@ -247,9 +247,9 @@ public class PjSipService extends Service {
                 Log.w(TAG, "mTrash.add(transportConfig);");
                 mEndpoint.libStart();
                 Log.w(TAG, "mEndpoint.libStart();");
-                networkChangeReceiver = new NetworkChangeReceiver(this);
-                IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-                registerReceiver(networkChangeReceiver, filter);
+//                 networkChangeReceiver = new NetworkChangeReceiver(this);
+//                 IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+//                 registerReceiver(networkChangeReceiver, filter);
                 notifyAll();
             }
         } catch (Exception e) {
