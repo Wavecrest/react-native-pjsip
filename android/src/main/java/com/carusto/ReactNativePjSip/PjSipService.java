@@ -405,7 +405,7 @@ public class PjSipService extends Service {
                 }
             }
 
-            CodecInfoVector codVect = mEndpoint.codecEnum();
+            CodecInfoVector codVect = mEndpoint.codecEnum2();
             JSONObject codecs = new JSONObject();
 
             for (int i = 0; i < codVect.size(); i++) {
@@ -859,7 +859,7 @@ public class PjSipService extends Service {
     void emmitCallChanged(PjSipCall call, OnCallStateParam prm) {
         try {
             final int callId = call.getId();
-            final pjsip_inv_state callState = call.getInfo().getState();
+            final int callState = call.getInfo().getState();
 
             job(() -> {
                 if (mIncallWakeLock == null) {
