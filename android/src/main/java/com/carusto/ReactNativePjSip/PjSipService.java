@@ -149,9 +149,6 @@ public class PjSipService extends Service {
             });
         }
 
-        if (isPermissionGranted && isForeground) {
-            return START_STICKY;
-        }
         return START_NOT_STICKY;
     }
 
@@ -835,15 +832,30 @@ public class PjSipService extends Service {
         try {
             Bundle codecSettings = intent.getExtras();
             if (codecSettings != null) {
+                CodecInfoVector2 codVect = mEndpoint.codecEnum2();
+                List<String> availableCodecs = new ArrayList<>();
+
+                for (int i = 0; i < codVect.size(); i++) {
+                    CodecInfo codec = codVect.get(i);
+                    availableCodecs.add(codec.getCodecId());
+                    codec.delete();
+                }
+
                 for (String key : codecSettings.keySet()) {
                     if (!key.equals("callback_id")) {
                         short priority = (short) codecSettings.getInt(key);
-                        mEndpoint.codecSetPriority(key, priority);
+
+                        if (availableCodecs.contains(key)) {
+                            mEndpoint.codecSetPriority(key, priority);
+                        } else {
+                            Log.w(TAG, "Codec not found: " + key);
+                        }
                     }
                 }
             }
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
+            Log.e(TAG, "Error while changing codec settings", e);
             mEmitter.fireIntentHandled(intent, e);
         }
     }
