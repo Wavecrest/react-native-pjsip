@@ -184,10 +184,10 @@ public class PjSipService extends Service {
         try {
             Log.w(TAG, "if (mEndpoint == null) {");
             if (mEndpoint == null) {
-                Log.w(TAG, "mEndpoint = new Endpoint();");
                 mEndpoint = new Endpoint();
-                Log.w(TAG, "mEndpoint.libCreate();");
+                Log.w(TAG, "mEndpoint = new Endpoint();");
                 mEndpoint.libCreate();
+                Log.w(TAG, "mEndpoint.libCreate();");
 
                 // Register the main thread once
                 if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
@@ -232,6 +232,7 @@ public class PjSipService extends Service {
                 epConfig.getMedConfig().setThreadCnt(2);
 
                 mEndpoint.libInit(epConfig);
+                Log.w(TAG, "mEndpoint.libInit(epConfig);");
                 mTrash.add(epConfig);
 
                 {
@@ -240,11 +241,13 @@ public class PjSipService extends Service {
                     mTlsTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
                     mTrash.add(transportConfig);
                 }
+                Log.w(TAG, "mTrash.add(transportConfig);");
 
                 mEndpoint.libStart();
-                networkChangeReceiver = new NetworkChangeReceiver(this);
-                IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-                registerReceiver(networkChangeReceiver, filter);
+                Log.w(TAG, "mEndpoint.libStart();");
+//                 networkChangeReceiver = new NetworkChangeReceiver(this);
+//                 IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+//                 registerReceiver(networkChangeReceiver, filter);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
