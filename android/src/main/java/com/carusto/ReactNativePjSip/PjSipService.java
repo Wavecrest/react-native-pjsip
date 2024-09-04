@@ -254,7 +254,7 @@ public class PjSipService extends Service {
                 mEndpoint.libStart();
                 Log.w(TAG, "mEndpoint.libStart();");
                 networkChangeReceiver = new NetworkChangeReceiver(this);
-                IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_CHANGE);
+                IntentFilter filter = new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE");
                 registerReceiver(networkChangeReceiver, filter);
                 notifyAll();
             }
