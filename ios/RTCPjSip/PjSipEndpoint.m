@@ -193,7 +193,7 @@ static PjSipEndpoint *sharedInstance = nil;
 - (void)networkChanged:(NSNotification *)notification {
     NSString *currentIpAddress = [self getIPAddress];
 
-    if (![currentIpAddress isEqualToString:self.lastIpAddress]) {
+    if (![currentIpAddress isEqualToString:lastIpAddress]) {
         NSLog(@"IP Address changed from %@ to %@", lastIpAddress, currentIpAddress);
         lastIpAddress = currentIpAddress;
         [self emmitIpChanged];
