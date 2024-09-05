@@ -102,11 +102,11 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void onIpChanged(Intent intent) {
-        emit("pjSipIpChanged");
+        emit("pjSipIpChanged", null);
     }
 
     private void onIpTransitioned(Intent intent) {
-        emit("pjSipIpTransitioned");
+        emit("pjSipIpTransitioned", null);
     }
 
     private void onMessageReceived(Intent intent) {
