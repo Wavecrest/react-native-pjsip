@@ -73,6 +73,7 @@ public class PjSipService extends Service {
 
     private BroadcastReceiver mPhoneStateChangedReceiver = new PhoneStateChangedReceiver();
 
+    private ConnectivityManager connectivityManager;
     private NetworkChangeReceiver networkChangeReceiver;
 
     public PjSipBroadcastEmiter getEmitter() {
@@ -253,9 +254,12 @@ public class PjSipService extends Service {
                 Log.w(TAG, "mTrash.add(transportConfig);");
                 mEndpoint.libStart();
                 Log.w(TAG, "mEndpoint.libStart();");
-                networkChangeReceiver = new NetworkChangeReceiver(this);
-                IntentFilter filter = new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE");
-                registerReceiver(networkChangeReceiver, filter);
+                connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (networkChangeReceiver == null) {
+                    networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
+                }
+                NetworkRequest networkRequest = new NetworkRequest.Builder().build();
+                connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
                 notifyAll();
             }
         } catch (Exception e) {
@@ -272,11 +276,9 @@ public class PjSipService extends Service {
         }
 
         try {
-            if (networkChangeReceiver != null) {
-              unregisterReceiver(networkChangeReceiver);
-              networkChangeReceiver = null;
+            if (connectivityManager != null && networkChangeReceiver != null) {
+                connectivityManager.unregisterNetworkCallback(networkChangeReceiver);
             }
-
             for (PjSipCall call : mCalls) {
                 evict(call);
             }
