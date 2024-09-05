@@ -157,11 +157,11 @@ public class PjSipService extends Service {
     public void handleIpChange() {
         job(() -> {
             try {
-                runOnUiThread(() -> mEmitter.fireIpChanged());
+                new Handler(Looper.getMainLooper()).post(() -> mEmitter.fireIpChanged());
                 IpChangeParam ipChangeParam = new IpChangeParam();
                 ipChangeParam.setRestartListener(true);
                 mEndpoint.handleIpChange(ipChangeParam);
-                runOnUiThread(() -> mEmitter.fireIpTransitioned());
+                new Handler(Looper.getMainLooper()).post(() -> mEmitter.fireIpTransitioned());
             } catch (Exception e) {
                 e.printStackTrace();
             }
