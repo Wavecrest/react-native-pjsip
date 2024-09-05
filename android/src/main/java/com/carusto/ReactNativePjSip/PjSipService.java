@@ -155,15 +155,17 @@ public class PjSipService extends Service {
     }
 
     public void handleIpChange() {
-        try {
-            mEmitter.fireIpChanged();
-            IpChangeParam ipChangeParam = new IpChangeParam();
-            ipChangeParam.setRestartListener(true);
-            mEndpoint.handleIpChange(ipChangeParam);
-            mEmitter.fireIpTransitioned();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        job(() -> {
+            try {
+                runOnUiThread(() -> mEmitter.fireIpChanged());
+                IpChangeParam ipChangeParam = new IpChangeParam();
+                ipChangeParam.setRestartListener(true);
+                mEndpoint.handleIpChange(ipChangeParam);
+                runOnUiThread(() -> mEmitter.fireIpTransitioned());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void createNotificationChannel() {
