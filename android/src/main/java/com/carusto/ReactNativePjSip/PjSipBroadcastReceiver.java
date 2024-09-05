@@ -102,15 +102,11 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void onIpChanged(Intent intent) {
-        String json = intent.getStringExtra("data");
-        Object params = ArgumentUtils.fromJson(json);
-        emit("pjSipIpChanged", params);
+        emit("pjSipIpChanged");
     }
 
     private void onIpTransitioned(Intent intent) {
-        String json = intent.getStringExtra("data");
-        Object params = ArgumentUtils.fromJson(json);
-        emit("pjSipIpTransitioned", params);
+        emit("pjSipIpTransitioned");
     }
 
     private void onMessageReceived(Intent intent) {
