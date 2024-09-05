@@ -114,12 +114,14 @@ public class PjSipBroadcastEmiter {
     }
 
     public void fireIpChanged() {
+        Log.d(TAG, "fireIpChanged");
         Intent intent = new Intent();
         intent.setAction(PjActions.EVENT_IP_CHANGED);
         context.sendBroadcast(intent);
     }
 
     public void fireIpTransitioned() {
+        Log.d(TAG, "fireIpChanged");
         Intent intent = new Intent();
         intent.setAction(PjActions.EVENT_IP_TRANSITIONED);
         context.sendBroadcast(intent);
