@@ -49,6 +49,8 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
         filter.addAction(PjActions.EVENT_CALL_SCREEN_LOCKED);
         filter.addAction(PjActions.EVENT_MESSAGE_RECEIVED);
         filter.addAction(PjActions.EVENT_HANDLED);
+        filter.addAction(PjActions.EVENT_IP_CHANGED);
+        filter.addAction(PjActions.EVENT_IP_TRANSITIONED);
 
         return filter;
     }
