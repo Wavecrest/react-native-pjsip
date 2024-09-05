@@ -155,17 +155,15 @@ public class PjSipService extends Service {
     }
 
     public void handleIpChange() {
-        job(()->{
-            try {
-                mEmitter.fireIpChanged();
-                IpChangeParam ipChangeParam = new IpChangeParam();
-                ipChangeParam.setRestartListener(true);
-                mEndpoint.handleIpChange(ipChangeParam);
-                mEmitter.fireIpTransitioned();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+        try {
+            mEmitter.fireIpChanged();
+            IpChangeParam ipChangeParam = new IpChangeParam();
+            ipChangeParam.setRestartListener(true);
+            mEndpoint.handleIpChange(ipChangeParam);
+            mEmitter.fireIpTransitioned();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void createNotificationChannel() {
@@ -258,9 +256,7 @@ public class PjSipService extends Service {
                 mEndpoint.libStart();
                 Log.w(TAG, "mEndpoint.libStart();");
                 connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                if (networkChangeReceiver == null) {
-                    networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
-                }
+                networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
                 NetworkRequest networkRequest = new NetworkRequest.Builder().build();
                 connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
                 notifyAll();
