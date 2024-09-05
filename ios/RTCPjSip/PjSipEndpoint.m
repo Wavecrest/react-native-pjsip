@@ -159,7 +159,7 @@ static PjSipEndpoint *sharedInstance = nil;
                                              selector:@selector(networkChanged:)
                                                  name:kReachabilityChangedNotification
                                                object:nil];
-    self.lastIpAddress = [self getIPAddress];
+    lastIpAddress = [self getIPAddress];
     [reachability startNotifier];
 
     return self;
@@ -194,8 +194,8 @@ static PjSipEndpoint *sharedInstance = nil;
     NSString *currentIpAddress = [self getIPAddress];
 
     if (![currentIpAddress isEqualToString:self.lastIpAddress]) {
-        NSLog(@"IP Address changed from %@ to %@", self.lastIpAddress, currentIpAddress);
-        self.lastIpAddress = currentIpAddress;
+        NSLog(@"IP Address changed from %@ to %@", lastIpAddress, currentIpAddress);
+        lastIpAddress = currentIpAddress;
         [self emmitIpChanged];
         pjsua_ip_change_param ip_change_param;
         ip_change_param.restart_listener = PJ_TRUE;
@@ -473,11 +473,11 @@ static PjSipEndpoint *sharedInstance = nil;
 }
 
 -(void)emmitIpChanged {
-    [self emmitEvent:@"pjSipIpChanged" body:[]];
+    [self emmitEvent:@"pjSipIpChanged" body:nil];
 }
 
 -(void)emmitIpTransitioned {
-    [self emmitEvent:@"pjSipIpTransitioned" body:[]];
+    [self emmitEvent:@"pjSipIpTransitioned" body:nil];
 }
 
 -(void)emmitCallReceived:(PjSipCall*) call {
