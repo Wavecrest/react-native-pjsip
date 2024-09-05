@@ -7,12 +7,16 @@
 #import <VialerPJSIP/pjsua.h>
 #import <Reachability/Reachability.h>
 
+#import <ifaddrs.h>
+#import <arpa/inet.h>
+
 #import "PjSipUtil.h"
 #import "PjSipEndpoint.h"
 #import "PjSipMessage.h"
 
 @implementation PjSipEndpoint {
     Reachability *reachability;
+    NSString *lastIpAddress;
 }
 
 static PjSipEndpoint *sharedInstance = nil;
@@ -147,7 +151,6 @@ static PjSipEndpoint *sharedInstance = nil;
         }
     }
 
-    // Initialization is done, now start pjsua
     status = pjsua_start();
     if (status != PJ_SUCCESS) NSLog(@"Error starting pjsua");
 
@@ -156,26 +159,54 @@ static PjSipEndpoint *sharedInstance = nil;
                                              selector:@selector(networkChanged:)
                                                  name:kReachabilityChangedNotification
                                                object:nil];
+    self.lastIpAddress = [self getIPAddress];
     [reachability startNotifier];
 
     return self;
 }
 
-- (void)networkChanged:(NSNotification *)notification {
-    Log.w(TAG, "[self emmitIpChanged]");
-    [self emmitIpChanged]
-    NetworkStatus netStatus = [reachability currentReachabilityStatus];
+- (NSString *)getIPAddress {
+    NSString *address = @"error";
+    struct ifaddrs *interfaces = NULL;
+    struct ifaddrs *temp_addr = NULL;
+    int success = 0;
 
-    pjsua_ip_change_param ip_change_param;
-    ip_change_param.restart_listener = PJ_TRUE;
-    ip_change_param.restart_lis_delay = PJSUA_TRANSPORT_RESTART_DELAY_TIME;
-    pj_status_t status = pjsua_handle_ip_change(&ip_change_param);
-    if (status != PJ_SUCCESS) {
-        NSLog(@"Failed to handle IP change: %d", status);
-    } else {
-        NSLog(@"IP change handled successfully");
-        Log.w(TAG, "[self emmitIpTransitioned]");
-        [self emmitIpTransitioned]
+    success = getifaddrs(&interfaces);
+    if (success == 0) {
+        temp_addr = interfaces;
+        while (temp_addr != NULL) {
+            if (temp_addr->ifa_addr->sa_family == AF_INET) {
+                if ([[NSString stringWithUTF8String:temp_addr->ifa_name] isEqualToString:@"en0"]) {
+                    address = [NSString stringWithUTF8String:inet_ntoa(((struct sockaddr_in *)temp_addr->ifa_addr)->sin_addr)];
+                }
+            }
+            temp_addr = temp_addr->ifa_next;
+        }
+    }
+
+    // Free memory
+    freeifaddrs(interfaces);
+
+    return address;
+}
+
+- (void)networkChanged:(NSNotification *)notification {
+    NSString *currentIpAddress = [self getIPAddress];
+
+    if (![currentIpAddress isEqualToString:self.lastIpAddress]) {
+        NSLog(@"IP Address changed from %@ to %@", self.lastIpAddress, currentIpAddress);
+        self.lastIpAddress = currentIpAddress;
+        [self emmitIpChanged];
+        pjsua_ip_change_param ip_change_param;
+        ip_change_param.restart_listener = PJ_TRUE;
+        ip_change_param.restart_lis_delay = PJSUA_TRANSPORT_RESTART_DELAY_TIME;
+        pj_status_t status = pjsua_handle_ip_change(&ip_change_param);
+        if (status != PJ_SUCCESS) {
+            NSLog(@"Failed to handle IP change: %d", status);
+        } else {
+            NSLog(@"IP change handled successfully");
+            [self emmitIpTransitioned];
+        }
     }
 }
 
