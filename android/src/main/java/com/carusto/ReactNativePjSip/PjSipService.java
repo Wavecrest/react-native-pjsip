@@ -92,6 +92,8 @@ public class PjSipService extends Service {
         boolean isPermissionGranted = notificationManager.areNotificationsEnabled();
 
         if (!mInitialized) {
+            Log.d(TAG, "if (!mInitialized) {");
+
             if (intent != null && intent.hasExtra("service")) {
                 mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
             }
@@ -125,40 +127,22 @@ public class PjSipService extends Service {
                 startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
                 isForeground = true;
             }
+        }
 
+        job(() -> {
             try {
-                job(() -> {
-                    load();
-                    isLoaded = true;
-                });
+              Log.d(TAG, "before load()");
+              load();
+              handle(intent);
             } catch (Exception e) {
                 Log.e(TAG, "Exception during job(this::load)", e);
             }
-        }
-
-        if (intent != null) {
-            job(() -> {
-                synchronized (this) {
-                    while (!isLoaded) {
-                        try {
-                            wait();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                    }
-                    handle(intent);
-                }
-            });
-        }
+        });
 
         return START_NOT_STICKY;
     }
 
     public void handleIpChange() {
-        if (!isLoaded || !mInitialized) {
-            return;
-        }
-
         job(() -> {
             try {
 
@@ -258,7 +242,6 @@ public class PjSipService extends Service {
                 networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
                 NetworkRequest networkRequest = new NetworkRequest.Builder().build();
                 connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
-                notifyAll();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
@@ -276,6 +259,7 @@ public class PjSipService extends Service {
         try {
             if (connectivityManager != null && networkChangeReceiver != null) {
                 connectivityManager.unregisterNetworkCallback(networkChangeReceiver);
+                networkChangeReceiver.delete();
                 networkChangeReceiver = null;
                 connectivityManager = null;
             }
@@ -310,7 +294,6 @@ public class PjSipService extends Service {
                 mEndpoint.libDestroy();
                 mEndpoint.delete();
                 mEndpoint = null;
-//                 mRegisteredThread = null;
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to destroy PjSip library", e);
