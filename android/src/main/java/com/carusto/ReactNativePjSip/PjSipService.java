@@ -49,7 +49,6 @@ public class PjSipService extends Service {
     private static final String CHANNEL_ID = "PjSipServiceChannel";
 
     private static boolean isForeground = false;
-    private boolean isLoaded = false;
 
     private boolean mInitialized;
     private HandlerThread mWorkerThread;
@@ -306,7 +305,9 @@ public class PjSipService extends Service {
         }
 
         mInitialized = false;
-        isLoaded = false;
+        mAudioManager.setSpeakerphoneOn(false);
+        mUseSpeaker = false;
+        mAudioManager.setMode(AudioManager.MODE_NORMAL);
     }
 
 
@@ -939,10 +940,10 @@ public class PjSipService extends Service {
                 mUseSpeaker = false;
                 mAudioManager.setMode(AudioManager.MODE_NORMAL);
             }
-
-            mEmitter.fireCallTerminated(call);
-            evict(call);
         });
+
+        mEmitter.fireCallTerminated(call);
+        evict(call);
     }
 
     void emmitCallUpdated(PjSipCall call) {
