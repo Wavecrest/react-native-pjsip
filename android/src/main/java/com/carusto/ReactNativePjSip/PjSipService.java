@@ -212,18 +212,10 @@ public class PjSipService extends Service {
                 mEndpoint.libCreate();
                 Log.d(TAG, "mEndpoint.libCreate();");
 
-                // Register worker threads if necessary
-                Handler uiHandler = new Handler(Looper.getMainLooper());
-                uiHandler.post(() -> {
-                    try {
-                        if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
-                            mEndpoint.libRegisterThread(Thread.currentThread().getName());
-                            mRegisteredThread = Thread.currentThread().getName();
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error registering UI thread", e);
-                    }
-                });
+                if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
+                    mEndpoint.libRegisterThread(Thread.currentThread().getName());
+                    mRegisteredThread = Thread.currentThread().getName();
+                }
 
                 // Configure endpoint
                 EpConfig epConfig = new EpConfig();
@@ -273,7 +265,7 @@ public class PjSipService extends Service {
         }
     }
 
-    public void releaseSIPResources() {
+    public synchronized void releaseSIPResources() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
