@@ -284,6 +284,8 @@ public class PjSipService extends Service {
         try {
             if (connectivityManager != null && networkChangeReceiver != null) {
                 connectivityManager.unregisterNetworkCallback(networkChangeReceiver);
+                networkChangeReceiver = null;
+                connectivityManager = null;
             }
             for (PjSipCall call : mCalls) {
                 evict(call);
