@@ -154,7 +154,7 @@ public class PjSipService extends Service {
         return START_NOT_STICKY;
     }
 
-    public synchronized void handleIpChange() {
+    public void handleIpChange() {
         if (!isLoaded || !mInitialized) {
             return;
         }
@@ -195,7 +195,7 @@ public class PjSipService extends Service {
         }
     }
 
-    private synchronized void load() {
+    private void load() {
         try {
             Log.d(TAG, "System.loadLibrary('pjsua2');");
             System.loadLibrary("pjsua2");
@@ -265,7 +265,7 @@ public class PjSipService extends Service {
         }
     }
 
-    public synchronized void releaseSIPResources() {
+    public void releaseSIPResources() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
