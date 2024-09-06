@@ -133,6 +133,7 @@ public class PjSipService extends Service {
             try {
               Log.d(TAG, "before load()");
               load();
+              Log.d(TAG, "before handle(intent)");
               handle(intent);
             } catch (Exception e) {
                 Log.e(TAG, "Exception during job(this::load)", e);
@@ -179,7 +180,7 @@ public class PjSipService extends Service {
         }
     }
 
-    private void load() {
+    private synchronized void load() {
         try {
             Log.d(TAG, "System.loadLibrary('pjsua2');");
             System.loadLibrary("pjsua2");
