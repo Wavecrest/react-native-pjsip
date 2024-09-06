@@ -939,10 +939,10 @@ public class PjSipService extends Service {
                 mUseSpeaker = false;
                 mAudioManager.setMode(AudioManager.MODE_NORMAL);
             }
-        });
 
-        mEmitter.fireCallTerminated(call);
-        evict(call);
+            mEmitter.fireCallTerminated(call);
+            evict(call);
+        });
     }
 
     void emmitCallUpdated(PjSipCall call) {
