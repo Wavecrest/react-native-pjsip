@@ -180,7 +180,7 @@ public class PjSipService extends Service {
         }
     }
 
-    private synchronized void load() {
+    private void load() {
         try {
             Log.d(TAG, "System.loadLibrary('pjsua2');");
             System.loadLibrary("pjsua2");
@@ -194,55 +194,52 @@ public class PjSipService extends Service {
             if (mEndpoint == null) {
                 mEndpoint = new Endpoint();
                 Log.d(TAG, "mEndpoint = new Endpoint();");
-                mEndpoint.libCreate();
-                Log.d(TAG, "mEndpoint.libCreate();");
+                synchronized(this) {
+                    mEndpoint.libCreate();
+                    Log.d(TAG, "mEndpoint.libCreate();");
 
-                if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
-                    mEndpoint.libRegisterThread(Thread.currentThread().getName());
-                    mRegisteredThread = Thread.currentThread().getName();
+                    // Configure endpoint
+                    EpConfig epConfig = new EpConfig();
+                    epConfig.getLogConfig().setLevel(10);
+                    epConfig.getLogConfig().setConsoleLevel(10);
+                    mLogWriter = new PjSipLogWriter();
+                    epConfig.getLogConfig().setWriter(mLogWriter);
+
+                    if (mServiceConfiguration.isUserAgentNotEmpty()) {
+                        epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
+                    } else {
+                        epConfig.getUaConfig().setUserAgent("React Native PjSip (" + mEndpoint.libVersion().getFull() + ")");
+                    }
+
+                    if (mServiceConfiguration.isStunServersNotEmpty()) {
+                        epConfig.getUaConfig().setStunServer(mServiceConfiguration.getStunServers());
+                    }
+
+                    epConfig.getMedConfig().setHasIoqueue(true);
+                    epConfig.getMedConfig().setClockRate(8000);
+                    epConfig.getMedConfig().setQuality(4);
+                    epConfig.getMedConfig().setEcOptions(1);
+                    epConfig.getMedConfig().setEcTailLen(200);
+                    epConfig.getMedConfig().setThreadCnt(2);
+
+                    mEndpoint.libInit(epConfig);
+                    Log.d(TAG, "mEndpoint.libInit(epConfig);");
+                    mTrash.add(epConfig);
+
+                    {
+                        TransportConfig transportConfig = new TransportConfig();
+                        transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+                        mTlsTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
+                        mTrash.add(transportConfig);
+                    }
+                    Log.d(TAG, "mTrash.add(transportConfig);");
+                    mEndpoint.libStart();
+                    Log.d(TAG, "mEndpoint.libStart();");
+                    connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                    networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
+                    NetworkRequest networkRequest = new NetworkRequest.Builder().build();
+                    connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
                 }
-
-                // Configure endpoint
-                EpConfig epConfig = new EpConfig();
-                epConfig.getLogConfig().setLevel(10);
-                epConfig.getLogConfig().setConsoleLevel(10);
-                mLogWriter = new PjSipLogWriter();
-                epConfig.getLogConfig().setWriter(mLogWriter);
-
-                if (mServiceConfiguration.isUserAgentNotEmpty()) {
-                    epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
-                } else {
-                    epConfig.getUaConfig().setUserAgent("React Native PjSip (" + mEndpoint.libVersion().getFull() + ")");
-                }
-
-                if (mServiceConfiguration.isStunServersNotEmpty()) {
-                    epConfig.getUaConfig().setStunServer(mServiceConfiguration.getStunServers());
-                }
-
-                epConfig.getMedConfig().setHasIoqueue(true);
-                epConfig.getMedConfig().setClockRate(8000);
-                epConfig.getMedConfig().setQuality(4);
-                epConfig.getMedConfig().setEcOptions(1);
-                epConfig.getMedConfig().setEcTailLen(200);
-                epConfig.getMedConfig().setThreadCnt(2);
-
-                mEndpoint.libInit(epConfig);
-                Log.d(TAG, "mEndpoint.libInit(epConfig);");
-                mTrash.add(epConfig);
-
-                {
-                    TransportConfig transportConfig = new TransportConfig();
-                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                    mTlsTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
-                    mTrash.add(transportConfig);
-                }
-                Log.d(TAG, "mTrash.add(transportConfig);");
-                mEndpoint.libStart();
-                Log.d(TAG, "mEndpoint.libStart();");
-                connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
-                NetworkRequest networkRequest = new NetworkRequest.Builder().build();
-                connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
