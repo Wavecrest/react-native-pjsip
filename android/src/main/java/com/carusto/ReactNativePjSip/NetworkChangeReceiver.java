@@ -55,4 +55,9 @@ public class NetworkChangeReceiver extends ConnectivityManager.NetworkCallback {
         }
         return null;
     }
+
+    public void release() {
+        sipService = null;
+        context = null;
+    }
 }

@@ -259,7 +259,7 @@ public class PjSipService extends Service {
         try {
             if (connectivityManager != null && networkChangeReceiver != null) {
                 connectivityManager.unregisterNetworkCallback(networkChangeReceiver);
-                networkChangeReceiver.delete();
+                networkChangeReceiver.release();
                 networkChangeReceiver = null;
                 connectivityManager = null;
             }
