@@ -262,10 +262,10 @@ public class PjSipService extends Service {
                 Log.d(TAG, "mTrash.add(transportConfig);");
                 mEndpoint.libStart();
                 Log.d(TAG, "mEndpoint.libStart();");
-                connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
-                NetworkRequest networkRequest = new NetworkRequest.Builder().build();
-                connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
+//                 connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+//                 networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
+//                 NetworkRequest networkRequest = new NetworkRequest.Builder().build();
+//                 connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
                 notifyAll();
             }
         } catch (Exception e) {
