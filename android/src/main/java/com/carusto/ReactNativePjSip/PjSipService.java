@@ -155,8 +155,13 @@ public class PjSipService extends Service {
     }
 
     public void handleIpChange() {
+        if (!isLoaded || !mInitialized) {
+            return;
+        }
+
         job(() -> {
             try {
+
                 mEmitter.fireIpChanged();
                 IpChangeParam ipChangeParam = new IpChangeParam();
                 ipChangeParam.setRestartListener(true);
@@ -955,6 +960,7 @@ public class PjSipService extends Service {
 
             if (mCalls.size() == 1) {
                 mAudioManager.setSpeakerphoneOn(false);
+                mUseSpeaker = false;
                 mAudioManager.setMode(AudioManager.MODE_NORMAL);
             }
         });
