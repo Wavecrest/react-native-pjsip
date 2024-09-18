@@ -246,6 +246,9 @@ public class PjSipService extends Service {
     }
 
     public void releaseSIPResources() {
+        stopForeground(true);
+        isForeground = false;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
@@ -450,8 +453,6 @@ public class PjSipService extends Service {
 
     private void handleStop(Intent intent) {
         try {
-            stopForeground(true);
-            isForeground = false;
             releaseSIPResources();
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
