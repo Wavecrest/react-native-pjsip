@@ -70,6 +70,7 @@ public class PjSipService extends Service {
     private List<PjSipCall> mCalls = new ArrayList<>();
     private List<Object> mTrash = new LinkedList<>();
     private AudioManager mAudioManager;
+    private AudioFocusRequest focusRequest;
     private boolean mUseSpeaker = false;
     private PowerManager mPowerManager;
     private PowerManager.WakeLock mIncallWakeLock;
@@ -119,6 +120,7 @@ public class PjSipService extends Service {
             proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
             job(() -> {
+                acquireAudioFocus();
                 acquireWakeLock();
                 acquireWifiLock();
                 setupProximitySensorListener();
@@ -1025,5 +1027,25 @@ public class PjSipService extends Service {
             mWifiLock.release();
             mWifiLock = null;
         }
+    }
+
+    private void acquireAudioFocus() {
+        AudioAttributes playbackAttributes = new AudioAttributes.Builder()
+           .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+           .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+           .build();
+        focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+           .setAudioAttributes(playbackAttributes)
+           .setAcceptsDelayedFocusGain(true)
+           .setOnAudioFocusChangeListener(afChangeListener)
+           .build();
+
+        int result = audioManager.requestAudioFocus(focusRequest);
+        Log.w(TAG, "Audio focus: ", result);
+    }
+
+    private void releaseAudioFocus() {
+        int result = audioManager.abandonAudioFocusRequest(focusRequest);
+        Log.w(TAG, "Released audio focus: ", result);
     }
 }
