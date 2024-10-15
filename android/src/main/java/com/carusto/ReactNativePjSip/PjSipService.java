@@ -71,8 +71,6 @@ public class PjSipService extends Service {
     private WifiManager.WifiLock mWifiLock;
     private String mRegisteredThread;
 
-    private BroadcastReceiver mPhoneStateChangedReceiver = new PhoneStateChangedReceiver();
-
     private ConnectivityManager connectivityManager;
     private NetworkChangeReceiver networkChangeReceiver;
 
@@ -101,15 +99,17 @@ public class PjSipService extends Service {
             mWorkerThread.setPriority(Thread.MAX_PRIORITY);
             mWorkerThread.start();
             mHandler = new Handler(mWorkerThread.getLooper());
-            mEmitter = new PjSipBroadcastEmiter(this);
-            mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
-            mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
-            mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
-            mWifiLock.setReferenceCounted(false);
 
-            IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-            registerReceiver(mPhoneStateChangedReceiver, phoneStateFilter);
+            mEmitter = new PjSipBroadcastEmiter(this);
+            mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+            mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+            proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+
+            acquirePartialWakeLock();
+            acquireWifiLock();
+            setupProximitySensorListener();
 
             mInitialized = true;
 
@@ -130,10 +130,8 @@ public class PjSipService extends Service {
 
         job(() -> {
             try {
-              Log.d(TAG, "before load()");
-              load();
-              Log.d(TAG, "before handle(intent)");
-              handle(intent);
+                load();
+                handle(intent);
             } catch (Exception e) {
                 Log.e(TAG, "Exception during job(this::load)", e);
             }
@@ -280,15 +278,9 @@ public class PjSipService extends Service {
             }
             mTrash.clear();
 
-            if (mIncallWakeLock != null && mIncallWakeLock.isHeld()) {
-                mIncallWakeLock.release();
-                mIncallWakeLock = null;
-            }
-
-            if (mWifiLock != null && mWifiLock.isHeld()) {
-                mWifiLock.release();
-                mWifiLock = null;
-            }
+            sensorManager.unregisterListener(proximitySensorListener);
+            releasePartialWakeLock();
+            releaseWifiLock();
 
             if (mEndpoint != null) {
                 mEndpoint.libDestroy();
@@ -297,14 +289,6 @@ public class PjSipService extends Service {
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to destroy PjSip library", e);
-        }
-
-        if (mInitialized) {
-            try {
-                unregisterReceiver(mPhoneStateChangedReceiver);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, "Receiver was not registered or already unregistered");
-            }
         }
 
         mInitialized = false;
@@ -900,22 +884,9 @@ public class PjSipService extends Service {
             final int callState = call.getInfo().getState();
 
             job(() -> {
-                Log.w(TAG, "call changed");
-                if (mIncallWakeLock == null) {
-                    Log.w(TAG, "created wake lock");
-                    mIncallWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "incall");
-                }
-                if (!mIncallWakeLock.isHeld()) {
-                    Log.w(TAG, "acquired wake lock");
-                    mIncallWakeLock.acquire();
-                }
-
                 if (callState != pjsip_inv_state.PJSIP_INV_STATE_INCOMING && !mUseSpeaker && mAudioManager.isSpeakerphoneOn()) {
                     mAudioManager.setSpeakerphoneOn(false);
                 }
-
-                mWifiLock.acquire();
-
                 if (callState == pjsip_inv_state.PJSIP_INV_STATE_EARLY || callState == pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED) {
                     mAudioManager.setMode(AudioManager.MODE_IN_CALL);
                 }
@@ -928,24 +899,6 @@ public class PjSipService extends Service {
     }
 
     void emmitCallTerminated(PjSipCall call, OnCallStateParam prm) {
-        job(() -> {
-            if (mCalls.size() == 1) {
-                if (mIncallWakeLock != null && mIncallWakeLock.isHeld()) {
-                    mIncallWakeLock.release();
-                }
-            }
-
-            if (mCalls.size() == 1) {
-                mWifiLock.release();
-            }
-
-            if (mCalls.size() == 1) {
-                mAudioManager.setSpeakerphoneOn(false);
-                mUseSpeaker = false;
-                mAudioManager.setMode(AudioManager.MODE_NORMAL);
-            }
-        });
-
         mEmitter.fireCallTerminated(call);
         evict(call);
     }
@@ -971,29 +924,73 @@ public class PjSipService extends Service {
         }
     }
 
-    /**
-     * Pauses all calls, used when received GSM call.
-     */
-    private void doPauseAllCalls() {
-        for (PjSipCall call : mCalls) {
-            try {
-                call.hold();
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to put call on hold", e);
+    private void setupProximitySensorListener() {
+        proximitySensorListener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
+                    if (event.values[0] < proximitySensor.getMaximumRange()) {
+                        turnOffScreen();
+                    } else {
+                        turnOnScreen();
+                    }
+                }
             }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                // No action needed
+            }
+        };
+    }
+
+    private void acquirePartialWakeLock() {
+        if (mIncallWakeLock == null) {
+            mIncallWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "incall_partial_wake");
+        }
+
+        if (!mIncallWakeLock.isHeld()) {
+            Log.w(TAG, "Acquiring partial wake lock");
+            mIncallWakeLock.acquire();
         }
     }
 
-    protected class PhoneStateChangedReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String extraState = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
-
-            if (TelephonyManager.EXTRA_STATE_RINGING.equals(extraState) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(extraState)) {
-                Log.d(TAG, "GSM call received, pause all SIP calls.");
-
-                job(PjSipService.this::doPauseAllCalls);
-            }
+    private void releasePartialWakeLock() {
+        if (mIncallWakeLock != null && mIncallWakeLock.isHeld()) {
+            Log.w(TAG, "Releasing partial wake lock");
+            mIncallWakeLock.release();
         }
+    }
+
+    private void acquireWifiLock() {
+        if (mWifiLock == null) {
+            mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, getPackageName() + "-wifi-call-lock");
+            mWifiLock.setReferenceCounted(false);
+        }
+
+        if (!mWifiLock.isHeld()) {
+            Log.w(TAG, "Acquiring wifi lock");
+            mWifiLock.acquire();
+        }
+    }
+
+    private void releaseWifiLock() {
+        if (mWifiLock != null && mWifiLock.isHeld()) {
+            Log.w(TAG, "Releasing wifi lock");
+            mWifiLock.release();
+            mWifiLock = null;
+        }
+    }
+
+    private void turnOffScreen() {
+        Log.d(TAG, "Screen turned off");
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+    }
+
+    private void turnOnScreen() {
+        Log.d(TAG, "Screen turned on");
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
     }
 }
