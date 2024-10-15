@@ -297,6 +297,7 @@ public class PjSipService extends Service {
             releaseWakeLock();
             releaseWifiLock();
             releaseProximityWakeLock();
+            releaseAudioFocus();
 
             if (mEndpoint != null) {
                 mEndpoint.libDestroy();
