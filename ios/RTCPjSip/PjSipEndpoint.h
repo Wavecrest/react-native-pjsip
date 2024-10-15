@@ -19,6 +19,7 @@
 +(instancetype)instance;
 
 -(NSDictionary *)start: (NSDictionary *) config;
+-(void)stop;
 
 -(void) updateStunServers: (int) accountId stunServerList:(NSArray *)stunServerList;
 
@@ -35,6 +36,8 @@
 -(void)changeCodecSettings: (NSDictionary*) codecSettings;
 
 -(void)emmitRegistrationChanged:(PjSipAccount*) account;
+-(void)emmitIpChanged;
+-(void)emmitIpTransitioned;
 -(void)emmitCallReceived:(PjSipCall*) call;
 -(void)emmitCallUpdated:(PjSipCall*) call;
 -(void)emmitCallChanged:(PjSipCall*) call;

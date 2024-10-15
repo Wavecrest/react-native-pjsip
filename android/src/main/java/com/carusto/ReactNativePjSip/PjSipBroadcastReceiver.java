@@ -49,6 +49,8 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
         filter.addAction(PjActions.EVENT_CALL_SCREEN_LOCKED);
         filter.addAction(PjActions.EVENT_MESSAGE_RECEIVED);
         filter.addAction(PjActions.EVENT_HANDLED);
+        filter.addAction(PjActions.EVENT_IP_CHANGED);
+        filter.addAction(PjActions.EVENT_IP_TRANSITIONED);
 
         return filter;
     }
@@ -68,6 +70,12 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
                 break;
             case PjActions.EVENT_REGISTRATION_CHANGED:
                 onRegistrationChanged(intent);
+                break;
+            case PjActions.EVENT_IP_CHANGED:
+                onIpChanged(intent);
+                break;
+            case PjActions.EVENT_IP_TRANSITIONED:
+                onIpTransitioned(intent);
                 break;
             case PjActions.EVENT_MESSAGE_RECEIVED:
                 onMessageReceived(intent);
@@ -91,6 +99,14 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
         String json = intent.getStringExtra("data");
         Object params = ArgumentUtils.fromJson(json);
         emit("pjSipRegistrationChanged", params);
+    }
+
+    private void onIpChanged(Intent intent) {
+        emit("pjSipIpChanged", null);
+    }
+
+    private void onIpTransitioned(Intent intent) {
+        emit("pjSipIpTransitioned", null);
     }
 
     private void onMessageReceived(Intent intent) {

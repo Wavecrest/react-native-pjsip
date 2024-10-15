@@ -229,7 +229,7 @@ public class PjSipCall extends Call {
             json.put("remoteUri", info.getRemoteUri());
 
             // -----
-            json.put("state", info.getState());
+            json.put("state", getCallStateString(info.getState()));
             json.put("stateText", info.getStateText());
             json.put("connectDuration", connectDuration);
             json.put("totalDuration", info.getTotalDuration().getSec());
@@ -274,9 +274,9 @@ public class PjSipCall extends Call {
                 JSONObject audioStreamJson = new JSONObject();
                 audioStreamJson.put("confSlot", info.getAudioConfSlot());
 
-                json.put("dir", info.getDir().toString());
-                json.put("type", info.getType().toString());
-                json.put("status", info.getStatus().toString());
+                json.put("dir", info.getDir());
+                json.put("type", info.getType());
+                json.put("status", info.getStatus());
                 json.put("audioStream", audioStreamJson);
 
                 result.put(json);
@@ -291,4 +291,25 @@ public class PjSipCall extends Call {
     public String toJsonString() {
         return toJson().toString();
     }
+
+    public static String getCallStateString(int state) {
+            switch (state) {
+                case pjsip_inv_state.PJSIP_INV_STATE_NULL:
+                    return "PJSIP_INV_STATE_NULL";
+                case pjsip_inv_state.PJSIP_INV_STATE_CALLING:
+                    return "PJSIP_INV_STATE_CALLING";
+                case pjsip_inv_state.PJSIP_INV_STATE_INCOMING:
+                    return "PJSIP_INV_STATE_INCOMING";
+                case pjsip_inv_state.PJSIP_INV_STATE_EARLY:
+                    return "PJSIP_INV_STATE_EARLY";
+                case pjsip_inv_state.PJSIP_INV_STATE_CONNECTING:
+                    return "PJSIP_INV_STATE_CONNECTING";
+                case pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED:
+                    return "PJSIP_INV_STATE_CONFIRMED";
+                case pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED:
+                    return "PJSIP_INV_STATE_DISCONNECTED";
+                default:
+                    return "Unknown State";
+            }
+        }
 }

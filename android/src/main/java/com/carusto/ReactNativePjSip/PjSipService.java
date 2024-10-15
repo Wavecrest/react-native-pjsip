@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ServiceInfo;
 import android.media.AudioManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -17,6 +18,13 @@ import android.os.Process;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import androidx.core.app.NotificationCompat;
+import android.net.ConnectivityManager;
+import android.net.NetworkRequest;
 
 import com.carusto.ReactNativePjSip.dto.AccountConfigurationDTO;
 import com.carusto.ReactNativePjSip.dto.CallSettingsDTO;
@@ -38,6 +46,9 @@ import java.util.Map;
 public class PjSipService extends Service {
 
     private static final String TAG = "PjSipService";
+    private static final String CHANNEL_ID = "PjSipServiceChannel";
+
+    private static boolean isForeground = false;
 
     private boolean mInitialized;
     private HandlerThread mWorkerThread;
@@ -62,6 +73,9 @@ public class PjSipService extends Service {
 
     private BroadcastReceiver mPhoneStateChangedReceiver = new PhoneStateChangedReceiver();
 
+    private ConnectivityManager connectivityManager;
+    private NetworkChangeReceiver networkChangeReceiver;
+
     public PjSipBroadcastEmiter getEmitter() {
         return mEmitter;
     }
@@ -73,30 +87,25 @@ public class PjSipService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
-        Log.w(TAG, "onStartCommand");
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        boolean isPermissionGranted = notificationManager.areNotificationsEnabled();
 
         if (!mInitialized) {
-            Log.w(TAG, "mInitialized");
+            Log.d(TAG, "if (!mInitialized) {");
+
             if (intent != null && intent.hasExtra("service")) {
                 mServiceConfiguration = ServiceConfigurationDTO.fromMap((Map) intent.getSerializableExtra("service"));
             }
 
             mWorkerThread = new HandlerThread(getClass().getSimpleName(), Process.THREAD_PRIORITY_FOREGROUND);
-            Log.w(TAG, "mWorkerThread");
             mWorkerThread.setPriority(Thread.MAX_PRIORITY);
             mWorkerThread.start();
             mHandler = new Handler(mWorkerThread.getLooper());
-            Log.w(TAG, "mHandler");
             mEmitter = new PjSipBroadcastEmiter(this);
-            Log.w(TAG, "mEmitter");
             mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
-            Log.w(TAG, "mAudioManager");
             mPowerManager = (PowerManager) getApplicationContext().getSystemService(POWER_SERVICE);
-            Log.w(TAG, "mPowerManager");
             mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            Log.w(TAG, "mWifiManager");
             mWifiLock = mWifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, this.getPackageName() + "-wifi-call-lock");
-            Log.w(TAG, "mWifiLock");
             mWifiLock.setReferenceCounted(false);
 
             IntentFilter phoneStateFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
@@ -104,25 +113,75 @@ public class PjSipService extends Service {
 
             mInitialized = true;
 
-            Log.w(TAG, "before load");
-            try {
-                job(this::load);
-            } catch (Exception e) {
-                Log.e(TAG, "Exception during job(this::load)", e);
+            if (!isForeground && isPermissionGranted) {
+                createNotificationChannel();
+                Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                                    .setStyle(new NotificationCompat.BigTextStyle().bigText(mServiceConfiguration.notificationMessage))
+                                    .setContentTitle(mServiceConfiguration.notificationTitle)
+                                    .setSmallIcon(getApplicationContext().getApplicationInfo().icon)
+                                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                                    .setOngoing(true)
+                                    .build();
+
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                isForeground = true;
             }
         }
 
-        if (intent != null) {
-            Log.w(TAG, "handle intent");
-            job(() -> handle(intent));
-        }
+        job(() -> {
+            try {
+              Log.d(TAG, "before load()");
+              load();
+              Log.d(TAG, "before handle(intent)");
+              handle(intent);
+            } catch (Exception e) {
+                Log.e(TAG, "Exception during job(this::load)", e);
+            }
+        });
 
         return START_NOT_STICKY;
     }
 
+    public void handleIpChange() {
+        job(() -> {
+            try {
+
+                mEmitter.fireIpChanged();
+                IpChangeParam ipChangeParam = new IpChangeParam();
+                ipChangeParam.setRestartListener(true);
+                mEndpoint.handleIpChange(ipChangeParam);
+                mEmitter.fireIpTransitioned();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+
+            NotificationChannel serviceChannel = new NotificationChannel(
+                CHANNEL_ID,
+                "Background Service Channel",
+                importance
+            );
+
+            serviceChannel.setSound(null, null);
+            serviceChannel.enableVibration(false);
+            serviceChannel.setShowBadge(false);
+            serviceChannel.setDescription("This channel is used to enable calls when app is in background");
+
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(serviceChannel);
+            }
+        }
+    }
+
     private void load() {
         try {
-            Log.w(TAG, "System.loadLibrary('pjsua2');");
+            Log.d(TAG, "System.loadLibrary('pjsua2');");
             System.loadLibrary("pjsua2");
         } catch (UnsatisfiedLinkError error) {
             Log.e(TAG, "Error while loading PJSIP pjsua2 native library", error);
@@ -130,59 +189,56 @@ public class PjSipService extends Service {
         }
 
         try {
-            Log.w(TAG, "if (mEndpoint == null) {");
+            Log.d(TAG, "if (mEndpoint == null) {");
             if (mEndpoint == null) {
-                Log.w(TAG, "mEndpoint = new Endpoint();");
                 mEndpoint = new Endpoint();
-                Log.w(TAG, "mEndpoint.libCreate();");
-                mEndpoint.libCreate();
+                Log.d(TAG, "mEndpoint = new Endpoint();");
+                synchronized(this) {
+                    mEndpoint.libCreate();
+                    Log.d(TAG, "mEndpoint.libCreate();");
 
-                // Register the main thread once
-                if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
-                    mEndpoint.libRegisterThread(Thread.currentThread().getName());
-                    mRegisteredThread = Thread.currentThread().getName();
-                }
+                    // Configure endpoint
+                    EpConfig epConfig = new EpConfig();
+                    epConfig.getLogConfig().setLevel(10);
+                    epConfig.getLogConfig().setConsoleLevel(10);
+                    mLogWriter = new PjSipLogWriter();
+                    epConfig.getLogConfig().setWriter(mLogWriter);
 
-                Handler uiHandler = new Handler(Looper.getMainLooper());
-                uiHandler.post(() -> {
-                    try {
-                        if (!Thread.currentThread().getName().equals(mRegisteredThread)) {
-                            mEndpoint.libRegisterThread(Thread.currentThread().getName());
-                            mRegisteredThread = Thread.currentThread().getName();
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error registering UI thread", e);
+                    if (mServiceConfiguration.isUserAgentNotEmpty()) {
+                        epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
+                    } else {
+                        epConfig.getUaConfig().setUserAgent("React Native PjSip (" + mEndpoint.libVersion().getFull() + ")");
                     }
-                });
 
-                // Configure endpoint
-                EpConfig epConfig = new EpConfig();
-                epConfig.getLogConfig().setLevel(10);
-                epConfig.getLogConfig().setConsoleLevel(10);
-                mLogWriter = new PjSipLogWriter();
-                epConfig.getLogConfig().setWriter(mLogWriter);
+                    if (mServiceConfiguration.isStunServersNotEmpty()) {
+                        epConfig.getUaConfig().setStunServer(mServiceConfiguration.getStunServers());
+                    }
 
-                if (mServiceConfiguration.isUserAgentNotEmpty()) {
-                    epConfig.getUaConfig().setUserAgent(mServiceConfiguration.getUserAgent());
-                } else {
-                    epConfig.getUaConfig().setUserAgent("React Native PjSip (" + mEndpoint.libVersion().getFull() + ")");
+                    epConfig.getMedConfig().setHasIoqueue(true);
+                    epConfig.getMedConfig().setClockRate(8000);
+                    epConfig.getMedConfig().setQuality(4);
+                    epConfig.getMedConfig().setEcOptions(1);
+                    epConfig.getMedConfig().setEcTailLen(200);
+                    epConfig.getMedConfig().setThreadCnt(2);
+
+                    mEndpoint.libInit(epConfig);
+                    Log.d(TAG, "mEndpoint.libInit(epConfig);");
+                    mTrash.add(epConfig);
+
+                    {
+                        TransportConfig transportConfig = new TransportConfig();
+                        transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+                        mTlsTransportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
+                        mTrash.add(transportConfig);
+                    }
+                    Log.d(TAG, "mTrash.add(transportConfig);");
+                    mEndpoint.libStart();
+                    Log.d(TAG, "mEndpoint.libStart();");
+                    connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                    networkChangeReceiver = new NetworkChangeReceiver(this, getApplicationContext());
+                    NetworkRequest networkRequest = new NetworkRequest.Builder().build();
+                    connectivityManager.registerNetworkCallback(networkRequest, networkChangeReceiver);
                 }
-
-                if (mServiceConfiguration.isStunServersNotEmpty()) {
-                    epConfig.getUaConfig().setStunServer(mServiceConfiguration.getStunServers());
-                }
-
-                epConfig.getMedConfig().setHasIoqueue(true);
-                epConfig.getMedConfig().setClockRate(8000);
-                epConfig.getMedConfig().setQuality(4);
-                epConfig.getMedConfig().setEcOptions(1);
-                epConfig.getMedConfig().setEcTailLen(200);
-                epConfig.getMedConfig().setThreadCnt(2);
-
-                mEndpoint.libInit(epConfig);
-                mTrash.add(epConfig);
-
-                mEndpoint.libStart();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while starting PJSIP", e);
@@ -190,6 +246,9 @@ public class PjSipService extends Service {
     }
 
     public void releaseSIPResources() {
+        stopForeground(true);
+        isForeground = false;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             if (mWorkerThread != null) {
                 mWorkerThread.quitSafely();
@@ -198,11 +257,21 @@ public class PjSipService extends Service {
         }
 
         try {
+            if (connectivityManager != null && networkChangeReceiver != null) {
+                connectivityManager.unregisterNetworkCallback(networkChangeReceiver);
+                networkChangeReceiver.release();
+                networkChangeReceiver = null;
+                connectivityManager = null;
+            }
             for (PjSipCall call : mCalls) {
                 evict(call);
             }
             for (PjSipAccount account : mAccounts) {
                 evict(account);
+            }
+            if (mTlsTransportId != 0) {
+                mEndpoint.transportClose(mTlsTransportId);
+                mTlsTransportId = 0;
             }
             for (Object obj : mTrash) {
                 if (obj instanceof PersistentObject) {
@@ -239,15 +308,16 @@ public class PjSipService extends Service {
         }
 
         mInitialized = false;
+        mAudioManager.setSpeakerphoneOn(false);
+        mUseSpeaker = false;
+        mAudioManager.setMode(AudioManager.MODE_NORMAL);
     }
 
 
     @Override
     public void onDestroy() {
-        Log.w(TAG, "PJSIPService onDestroy()");
-
+        Log.d(TAG, "PJSIPService onDestroy()");
         releaseSIPResources();
-
         super.onDestroy();
     }
 
@@ -261,13 +331,6 @@ public class PjSipService extends Service {
 
     public void evict(final PjSipAccount account) {
         mAccounts.remove(account);
-
-        try {
-            mEndpoint.transportClose(account.getTransportId());
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to close transport for account", e);
-        }
-
         account.delete();
     }
 
@@ -346,6 +409,9 @@ public class PjSipService extends Service {
             case PjActions.ACTION_CHANGE_CODEC_SETTINGS:
                 handleChangeCodecSettings(intent);
                 break;
+            case PjActions.ACTION_STOP:
+                handleStop(intent);
+                break;
 
             // Configuration actions
             case PjActions.ACTION_SET_SERVICE_CONFIGURATION:
@@ -364,7 +430,7 @@ public class PjSipService extends Service {
                 }
             }
 
-            CodecInfoVector codVect = mEndpoint.codecEnum();
+            CodecInfoVector2 codVect = mEndpoint.codecEnum2();
             JSONObject codecs = new JSONObject();
 
             for (int i = 0; i < codVect.size(); i++) {
@@ -382,6 +448,15 @@ public class PjSipService extends Service {
         } catch (Exception error) {
             Log.e(TAG, "Error while building codecs list", error);
             throw new RuntimeException(error);
+        }
+    }
+
+    private void handleStop(Intent intent) {
+        try {
+            releaseSIPResources();
+            mEmitter.fireIntentHandled(intent);
+        } catch (Exception e) {
+            mEmitter.fireIntentHandled(intent, e);
         }
     }
 
@@ -465,24 +540,20 @@ public class PjSipService extends Service {
             cfg.getRegConfig().setHeaders(headers);
         }
 
-        int transportId = mTcpTransportId;
+        int transportId = mTlsTransportId;
 
         if (configuration.isTransportNotEmpty()) {
             TransportConfig transportConfig = new TransportConfig();
 
             switch (configuration.getTransport()) {
-                case "UDP":
-                    transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
-                    transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP, transportConfig);
-                    mTrash.add(transportConfig);
-                    break;
                 case "TLS":
+                    transportId = mTlsTransportId;
                     transportConfig.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
                     transportId = mEndpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS, transportConfig);
                     mTrash.add(transportConfig);
                     break;
                 default:
-                    Log.w(TAG, "Illegal \"" + configuration.getTransport() + "\" transport (possible values are UDP, TCP or TLS) use TCP instead");
+                    Log.w(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
                     break;
             }
         }
@@ -522,19 +593,19 @@ public class PjSipService extends Service {
     private void handleCallMake(Intent intent) {
         try {
             int accountId = intent.getIntExtra("account_id", -1);
-            Log.w(TAG, "PjSipAccount account = findAccount(accountId);");
+            Log.d(TAG, "PjSipAccount account = findAccount(accountId);");
             PjSipAccount account = findAccount(accountId);
             String destination = intent.getStringExtra("destination");
             String settingsJson = intent.getStringExtra("settings");
             String messageJson = intent.getStringExtra("message");
 
-            Log.w(TAG, "CallOpParam callOpParam = new CallOpParam(true);");
+            Log.d(TAG, "CallOpParam callOpParam = new CallOpParam(true);");
             CallOpParam callOpParam = new CallOpParam(true);
 
             if (settingsJson != null) {
-                Log.w(TAG, "CallSettingsDTO settingsDTO = CallSettingsDTO.fromJson(settingsJson);");
+                Log.d(TAG, "CallSettingsDTO settingsDTO = CallSettingsDTO.fromJson(settingsJson);");
                 CallSettingsDTO settingsDTO = CallSettingsDTO.fromJson(settingsJson);
-                Log.w(TAG, "CallSetting callSettings = new CallSetting();");
+                Log.d(TAG, "CallSetting callSettings = new CallSetting();");
                 CallSetting callSettings = new CallSetting();
 
                 if (settingsDTO.getAudioCount() != null) {
@@ -552,9 +623,9 @@ public class PjSipService extends Service {
             }
 
             if (messageJson != null) {
-                Log.w(TAG, "SipMessageDTO messageDTO = SipMessageDTO.fromJson(messageJson);");
+                Log.d(TAG, "SipMessageDTO messageDTO = SipMessageDTO.fromJson(messageJson);");
                 SipMessageDTO messageDTO = SipMessageDTO.fromJson(messageJson);
-                Log.w(TAG, "SipTxOption callTxOption = new SipTxOption();");
+                Log.d(TAG, "SipTxOption callTxOption = new SipTxOption();");
                 SipTxOption callTxOption = new SipTxOption();
 
                 if (messageDTO.getTargetUri() != null) {
@@ -574,7 +645,7 @@ public class PjSipService extends Service {
                 mTrash.add(callTxOption);
             }
 
-            Log.w(TAG, "PjSipCall call = new PjSipCall(account);");
+            Log.d(TAG, "PjSipCall call = new PjSipCall(account);");
             PjSipCall call = new PjSipCall(account);
             call.makeCall(destination, callOpParam);
             callOpParam.delete();
@@ -582,7 +653,7 @@ public class PjSipService extends Service {
             doPauseParallelCalls(call);
 
             mCalls.add(call);
-            Log.w(TAG, "mEmitter.fireIntentHandled(intent, call.toJson());");
+            Log.d(TAG, "mEmitter.fireIntentHandled(intent, call.toJson());");
             mEmitter.fireIntentHandled(intent, call.toJson());
         } catch (Exception e) {
             mEmitter.fireIntentHandled(intent, e);
@@ -752,15 +823,30 @@ public class PjSipService extends Service {
         try {
             Bundle codecSettings = intent.getExtras();
             if (codecSettings != null) {
+                CodecInfoVector2 codVect = mEndpoint.codecEnum2();
+                List<String> availableCodecs = new ArrayList<>();
+
+                for (int i = 0; i < codVect.size(); i++) {
+                    CodecInfo codec = codVect.get(i);
+                    availableCodecs.add(codec.getCodecId());
+                    codec.delete();
+                }
+
                 for (String key : codecSettings.keySet()) {
                     if (!key.equals("callback_id")) {
                         short priority = (short) codecSettings.getInt(key);
-                        mEndpoint.codecSetPriority(key, priority);
+
+                        if (availableCodecs.contains(key)) {
+                            mEndpoint.codecSetPriority(key, priority);
+                        } else {
+                            Log.w(TAG, "Codec not found: " + key);
+                        }
                     }
                 }
             }
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
+            Log.e(TAG, "Error while changing codec settings", e);
             mEmitter.fireIntentHandled(intent, e);
         }
     }
@@ -811,7 +897,7 @@ public class PjSipService extends Service {
     void emmitCallChanged(PjSipCall call, OnCallStateParam prm) {
         try {
             final int callId = call.getId();
-            final pjsip_inv_state callState = call.getInfo().getState();
+            final int callState = call.getInfo().getState();
 
             job(() -> {
                 if (mIncallWakeLock == null) {
@@ -852,6 +938,7 @@ public class PjSipService extends Service {
 
             if (mCalls.size() == 1) {
                 mAudioManager.setSpeakerphoneOn(false);
+                mUseSpeaker = false;
                 mAudioManager.setMode(AudioManager.MODE_NORMAL);
             }
         });

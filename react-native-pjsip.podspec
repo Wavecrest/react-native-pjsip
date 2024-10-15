@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
 
   s.authors      = package['author']
   s.homepage     = package['homepage']
-  s.platform     = :ios, "14.0"
+  s.platform     = :ios, "13.4"
 
   s.source       = { :git => "https://github.com/Wavecrest/react-native-pjsip.git" }
   s.source_files  = "ios/RTCPjSip/**/*.{h,m}"
@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
     'GCC_PREPROCESSOR_DEFINITIONS' => 'PJ_AUTOCONF=1',
     'USE_HEADERMAP' => 'NO',
   }
+
   s.dependency 'React'
+  s.dependency 'Reachability', '~> 3.2'
 end
-
-
