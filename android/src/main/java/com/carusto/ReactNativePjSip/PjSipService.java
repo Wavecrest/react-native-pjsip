@@ -140,7 +140,7 @@ public class PjSipService extends Service {
                                     .setOngoing(true)
                                     .build();
 
-                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
                 isForeground = true;
             }
         }
