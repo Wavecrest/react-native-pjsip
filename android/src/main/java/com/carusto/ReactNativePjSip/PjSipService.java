@@ -80,6 +80,10 @@ public class PjSipService extends Service {
     private ConnectivityManager connectivityManager;
     private NetworkChangeReceiver networkChangeReceiver;
 
+    private SensorManager sensorManager;
+    private Sensor proximitySensor;
+    private SensorEventListener proximitySensorListener;
+
     public PjSipBroadcastEmiter getEmitter() {
         return mEmitter;
     }
