@@ -307,7 +307,7 @@ public class PjSipService extends Service {
                 mEndpoint = null;
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to destroy PjSip library", e);
+            Log.d(TAG, "Failed to destroy PjSip library", e);
         }
 
         mInitialized = false;
@@ -556,7 +556,7 @@ public class PjSipService extends Service {
                     mTrash.add(transportConfig);
                     break;
                 default:
-                    Log.w(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
+                    Log.e(TAG, "Illegal \""+ configuration.getTransport() +"\" transport (possible values are UDP, TCP or TLS) use TCP instead");
                     break;
             }
         }
@@ -893,7 +893,7 @@ public class PjSipService extends Service {
                 emmitCallChanged(call, prm);
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to handle call state event", e);
+            Log.e(TAG, "Failed to handle call state event", e);
         }
     }
 
@@ -911,7 +911,7 @@ public class PjSipService extends Service {
                 }
             });
         } catch (Exception e) {
-            Log.w(TAG, "Failed to retrieve call state", e);
+            Log.e(TAG, "Failed to retrieve call state", e);
         }
 
         mEmitter.fireCallChanged(call);
@@ -938,7 +938,7 @@ public class PjSipService extends Service {
             try {
                 call.hold();
             } catch (Exception e) {
-                Log.w(TAG, "Failed to put call on hold", e);
+                Log.e(TAG, "Failed to put call on hold", e);
             }
         }
     }
@@ -982,14 +982,14 @@ public class PjSipService extends Service {
         }
 
         if (!mProximityWakeLock.isHeld()) {
-            Log.w(TAG, "Acquiring proximity wake lock (turning off screen)");
+            Log.d(TAG, "Acquiring proximity wake lock (turning off screen)");
             mProximityWakeLock.acquire();
         }
     }
 
     private void releaseProximityWakeLock() {
         if (mProximityWakeLock != null && mProximityWakeLock.isHeld()) {
-            Log.w(TAG, "Releasing proximity wake lock (turning on screen)");
+            Log.d(TAG, "Releasing proximity wake lock (turning on screen)");
             mProximityWakeLock.release();
         }
     }
@@ -1000,14 +1000,14 @@ public class PjSipService extends Service {
         }
 
         if (!mIncallWakeLock.isHeld()) {
-            Log.w(TAG, "Acquiring partial wake lock");
+            Log.d(TAG, "Acquiring partial wake lock");
             mIncallWakeLock.acquire();
         }
     }
 
     private void releaseWakeLock() {
         if (mIncallWakeLock != null && mIncallWakeLock.isHeld()) {
-            Log.w(TAG, "Releasing partial wake lock");
+            Log.d(TAG, "Releasing partial wake lock");
             mIncallWakeLock.release();
         }
     }
@@ -1019,14 +1019,14 @@ public class PjSipService extends Service {
         }
 
         if (!mWifiLock.isHeld()) {
-            Log.w(TAG, "Acquiring wifi lock");
+            Log.d(TAG, "Acquiring wifi lock");
             mWifiLock.acquire();
         }
     }
 
     private void releaseWifiLock() {
         if (mWifiLock != null && mWifiLock.isHeld()) {
-            Log.w(TAG, "Releasing wifi lock");
+            Log.d(TAG, "Releasing wifi lock");
             mWifiLock.release();
             mWifiLock = null;
         }
@@ -1037,6 +1037,12 @@ public class PjSipService extends Service {
            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
            .build();
+        AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+           @Override
+           public void onAudioFocusChange(int focusChange) {
+              Log.d(TAG, "Audio focus changed: ", focusChange);
+           }
+        };
         focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
            .setAudioAttributes(playbackAttributes)
            .setAcceptsDelayedFocusGain(true)
@@ -1044,11 +1050,11 @@ public class PjSipService extends Service {
            .build();
 
         int result = mAudioManager.requestAudioFocus(focusRequest);
-        Log.w(TAG, "Audio focus: ", result);
+        Log.d(TAG, "Audio focus: ", result);
     }
 
     private void releaseAudioFocus() {
         int result = mAudioManager.abandonAudioFocusRequest(focusRequest);
-        Log.w(TAG, "Released audio focus: ", result);
+        Log.d(TAG, "Released audio focus: ", result);
     }
 }
