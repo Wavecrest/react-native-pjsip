@@ -954,7 +954,7 @@ public class PjSipService extends Service {
 
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
-                // No action needed
+                Log.d(TAG, "Proximity sensor accuracy changed: " + accuracy);
             }
         };
 
