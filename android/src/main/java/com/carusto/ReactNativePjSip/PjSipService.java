@@ -83,6 +83,7 @@ public class PjSipService extends Service {
     private SensorManager sensorManager;
     private Sensor proximitySensor;
     private SensorEventListener proximitySensorListener;
+    private PowerManager.WakeLock mProximityWakeLock;
 
     public PjSipBroadcastEmiter getEmitter() {
         return mEmitter;
@@ -291,6 +292,7 @@ public class PjSipService extends Service {
             sensorManager.unregisterListener(proximitySensorListener);
             releasePartialWakeLock();
             releaseWifiLock();
+            releaseProximityWakeLock();
 
             if (mEndpoint != null) {
                 mEndpoint.libDestroy();
@@ -940,9 +942,9 @@ public class PjSipService extends Service {
             public void onSensorChanged(SensorEvent event) {
                 if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
                     if (event.values[0] < proximitySensor.getMaximumRange()) {
-                        turnOffScreen();
+                        acquireProximityWakeLock();
                     } else {
-                        turnOnScreen();
+                        releaseProximityWakeLock();
                     }
                 }
             }
@@ -952,6 +954,28 @@ public class PjSipService extends Service {
                 // No action needed
             }
         };
+
+        sensorManager.registerListener(proximitySensorListener, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    private void acquireProximityWakeLock() {
+        if (mProximityWakeLock == null) {
+            mProximityWakeLock = mPowerManager.newWakeLock(
+                PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "incall_proximity_wake"
+            );
+        }
+
+        if (!mProximityWakeLock.isHeld()) {
+            Log.w(TAG, "Acquiring proximity wake lock (turning off screen)");
+            mProximityWakeLock.acquire();
+        }
+    }
+
+    private void releaseProximityWakeLock() {
+        if (mProximityWakeLock != null && mProximityWakeLock.isHeld()) {
+            Log.w(TAG, "Releasing proximity wake lock (turning on screen)");
+            mProximityWakeLock.release();
+        }
     }
 
     private void acquirePartialWakeLock() {
@@ -990,17 +1014,5 @@ public class PjSipService extends Service {
             mWifiLock.release();
             mWifiLock = null;
         }
-    }
-
-    private void turnOffScreen() {
-        Log.d(TAG, "Screen turned off");
-        getApplicationContext().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getApplicationContext().getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-    }
-
-    private void turnOnScreen() {
-        Log.d(TAG, "Screen turned on");
-        getApplicationContext().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getApplicationContext().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
     }
 }
