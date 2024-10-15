@@ -118,9 +118,11 @@ public class PjSipService extends Service {
             sensorManager = (SensorManager) getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
             proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
-            acquirePartialWakeLock();
-            acquireWifiLock();
-            setupProximitySensorListener();
+            job(() -> {
+                acquirePartialWakeLock();
+                acquireWifiLock();
+                setupProximitySensorListener();
+            });
 
             mInitialized = true;
 
