@@ -1040,7 +1040,7 @@ public class PjSipService extends Service {
         AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
            @Override
            public void onAudioFocusChange(int focusChange) {
-              Log.d(TAG, "Audio focus changed: ", focusChange);
+              Log.d(TAG, "Audio focus changed: " + focusChange);
            }
         };
         focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -1050,11 +1050,11 @@ public class PjSipService extends Service {
            .build();
 
         int result = mAudioManager.requestAudioFocus(focusRequest);
-        Log.d(TAG, "Audio focus: ", result);
+        Log.d(TAG, "Audio focus: " + result);
     }
 
     private void releaseAudioFocus() {
         int result = mAudioManager.abandonAudioFocusRequest(focusRequest);
-        Log.d(TAG, "Released audio focus: ", result);
+        Log.d(TAG, "Released audio focus: " + result);
     }
 }
