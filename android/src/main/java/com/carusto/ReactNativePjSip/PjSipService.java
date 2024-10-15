@@ -941,6 +941,8 @@ public class PjSipService extends Service {
             @Override
             public void onSensorChanged(SensorEvent event) {
                 if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
+                    Log.d(TAG, "Proximity sensor changed: " + event.values[0]);
+
                     if (event.values[0] < proximitySensor.getMaximumRange()) {
                         acquireProximityWakeLock();
                     } else {
@@ -961,7 +963,7 @@ public class PjSipService extends Service {
     private void acquireProximityWakeLock() {
         if (mProximityWakeLock == null) {
             mProximityWakeLock = mPowerManager.newWakeLock(
-                PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "incall_proximity_wake"
+                PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, getPackageName() + "incall_proximity_wake"
             );
         }
 
@@ -980,7 +982,7 @@ public class PjSipService extends Service {
 
     private void acquirePartialWakeLock() {
         if (mIncallWakeLock == null) {
-            mIncallWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "incall_partial_wake");
+            mIncallWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getPackageName() + "incall_partial_wake");
         }
 
         if (!mIncallWakeLock.isHeld()) {
