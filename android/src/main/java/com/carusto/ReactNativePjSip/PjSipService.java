@@ -940,6 +940,7 @@ public class PjSipService extends Service {
         proximitySensorListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
+                Log.d(TAG, "Proximity sensor type changed: " + event.sensor.getType());
                 if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
                     Log.d(TAG, "Proximity sensor changed: " + event.values[0]);
 
