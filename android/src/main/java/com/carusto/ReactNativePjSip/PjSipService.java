@@ -900,10 +900,13 @@ public class PjSipService extends Service {
             final int callState = call.getInfo().getState();
 
             job(() -> {
+                Log.w(TAG, "call changed");
                 if (mIncallWakeLock == null) {
+                    Log.w(TAG, "created wake lock");
                     mIncallWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "incall");
                 }
                 if (!mIncallWakeLock.isHeld()) {
+                    Log.w(TAG, "acquired wake lock");
                     mIncallWakeLock.acquire();
                 }
 
