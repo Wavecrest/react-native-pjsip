@@ -119,7 +119,7 @@ public class PjSipService extends Service {
             proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
             job(() -> {
-                acquirePartialWakeLock();
+                acquireWakeLock();
                 acquireWifiLock();
                 setupProximitySensorListener();
             });
@@ -292,7 +292,7 @@ public class PjSipService extends Service {
             mTrash.clear();
 
             sensorManager.unregisterListener(proximitySensorListener);
-            releasePartialWakeLock();
+            releaseWakeLock();
             releaseWifiLock();
             releaseProximityWakeLock();
 
@@ -983,9 +983,9 @@ public class PjSipService extends Service {
         }
     }
 
-    private void acquirePartialWakeLock() {
+    private void acquireWakeLock() {
         if (mIncallWakeLock == null) {
-            mIncallWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getPackageName() + "incall_partial_wake");
+            mIncallWakeLock = mPowerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, getPackageName() + "incall_partial_wake");
         }
 
         if (!mIncallWakeLock.isHeld()) {
@@ -994,7 +994,7 @@ public class PjSipService extends Service {
         }
     }
 
-    private void releasePartialWakeLock() {
+    private void releaseWakeLock() {
         if (mIncallWakeLock != null && mIncallWakeLock.isHeld()) {
             Log.w(TAG, "Releasing partial wake lock");
             mIncallWakeLock.release();
