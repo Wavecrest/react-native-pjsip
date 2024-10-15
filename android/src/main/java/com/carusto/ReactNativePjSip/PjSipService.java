@@ -6,7 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.AudioAttributes;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
@@ -1041,12 +1043,12 @@ public class PjSipService extends Service {
            .setOnAudioFocusChangeListener(afChangeListener)
            .build();
 
-        int result = audioManager.requestAudioFocus(focusRequest);
+        int result = mAudioManager.requestAudioFocus(focusRequest);
         Log.w(TAG, "Audio focus: ", result);
     }
 
     private void releaseAudioFocus() {
-        int result = audioManager.abandonAudioFocusRequest(focusRequest);
+        int result = mAudioManager.abandonAudioFocusRequest(focusRequest);
         Log.w(TAG, "Released audio focus: ", result);
     }
 }
