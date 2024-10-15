@@ -947,11 +947,15 @@ public class PjSipService extends Service {
                     Log.d(TAG, "Proximity sensor changed: " + event.values[0]);
 
                     if (event.values[0] < proximitySensor.getMaximumRange()) {
-                        releaseWakeLock();
-                        acquireProximityWakeLock();
+                        job(() -> {
+                            releaseWakeLock();
+                            acquireProximityWakeLock();
+                        });
                     } else {
-                        releaseProximityWakeLock();
-                        acquireWakeLock();
+                        job(() -> {
+                            releaseProximityWakeLock();
+                            acquireWakeLock();
+                        });
                     }
                 }
             }
