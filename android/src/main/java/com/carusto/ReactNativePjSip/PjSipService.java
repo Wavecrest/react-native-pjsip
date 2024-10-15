@@ -107,10 +107,10 @@ public class PjSipService extends Service {
             mHandler = new Handler(mWorkerThread.getLooper());
 
             mEmitter = new PjSipBroadcastEmiter(this);
-            mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-            mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-            mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-            sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+            mAudioManager = (AudioManager) getApplicationContext().getSystemService(AUDIO_SERVICE);
+            mPowerManager = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
+            mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            sensorManager = (SensorManager) getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
             proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
             acquirePartialWakeLock();
@@ -990,13 +990,13 @@ public class PjSipService extends Service {
 
     private void turnOffScreen() {
         Log.d(TAG, "Screen turned off");
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        getApplicationContext().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getApplicationContext().getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
     }
 
     private void turnOnScreen() {
         Log.d(TAG, "Screen turned on");
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        getApplicationContext().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getApplicationContext().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
     }
 }
