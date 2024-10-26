@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VERSION="3.8"
+VERSION="3.9"
 URL="https://github.com/Wavecrest/react-native-pjsip-builder/releases/download/${VERSION}/release.tar.gz"
 LOCK=".libs.lock"
 DEST=".libs.tar.gz"
