@@ -264,13 +264,6 @@ public class PjSipService extends Service {
         stopForeground(true);
         isForeground = false;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            if (mWorkerThread != null) {
-                mWorkerThread.quitSafely();
-                mWorkerThread = null;
-            }
-        }
-
         try {
             if (connectivityManager != null && networkChangeReceiver != null) {
                 connectivityManager.unregisterNetworkCallback(networkChangeReceiver);
@@ -306,14 +299,24 @@ public class PjSipService extends Service {
                 mEndpoint.delete();
                 mEndpoint = null;
             }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                if (mWorkerThread != null) {
+                    mWorkerThread.quitSafely();
+                    mWorkerThread = null;
+                }
+            }
         } catch (Exception e) {
             Log.d(TAG, "Failed to destroy PjSip library", e);
         }
 
         mInitialized = false;
-        mAudioManager.setSpeakerphoneOn(false);
         mUseSpeaker = false;
-        mAudioManager.setMode(AudioManager.MODE_NORMAL);
+
+        if (mAudioManager != null) {
+          mAudioManager.setSpeakerphoneOn(false);
+          mAudioManager.setMode(AudioManager.MODE_NORMAL);
+        }
     }
 
 
