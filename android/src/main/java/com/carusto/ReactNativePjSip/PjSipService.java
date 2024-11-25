@@ -102,7 +102,7 @@ public class PjSipService extends Service {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         boolean isPermissionGranted = notificationManager.areNotificationsEnabled();
 
-        if (!mInitialized) {
+        if (!mInitialized && intent.getAction() == PjActions.ACTION_START)  {
             Log.d(TAG, "if (!mInitialized) {");
 
             if (intent != null && intent.hasExtra("service")) {
@@ -147,7 +147,9 @@ public class PjSipService extends Service {
 
         job(() -> {
             try {
-                load();
+                if (intent.getAction() == PjActions.ACTION_START) {
+                    load();
+                }
                 handle(intent);
             } catch (Exception e) {
                 Log.e(TAG, "Exception during job(this::load)", e);
