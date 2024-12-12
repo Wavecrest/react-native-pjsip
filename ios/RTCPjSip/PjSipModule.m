@@ -21,7 +21,19 @@
 
 - (instancetype)init {
     self = [super init];
+
+    if (self) {
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(onAppWillTerminate)
+                                                     name:UIApplicationWillTerminateNotification
+                                                   object:nil];
+    }
+
     return self;
+}
+
+- (void)onAppWillTerminate {
+    [[PjSipEndpoint instance] stop];
 }
 
 + (BOOL)requiresMainQueueSetup

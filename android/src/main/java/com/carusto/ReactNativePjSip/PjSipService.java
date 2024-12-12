@@ -46,6 +46,7 @@ import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import org.json.JSONObject;
 import org.pjsip.pjsua2.*;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -145,16 +146,18 @@ public class PjSipService extends Service {
             }
         }
 
-        job(() -> {
-            try {
-                if (intent.getAction() == PjActions.ACTION_START) {
-                    load();
+        if (mInitialized) {
+            job(() -> {
+                try {
+                    if (intent.getAction() == PjActions.ACTION_START) {
+                        load();
+                    }
+                    handle(intent);
+                } catch (Exception e) {
+                    Log.e(TAG, "Exception during job(this::load)", e);
                 }
-                handle(intent);
-            } catch (Exception e) {
-                Log.e(TAG, "Exception during job(this::load)", e);
-            }
-        });
+            });
+        }
 
         return START_NOT_STICKY;
     }
@@ -273,37 +276,50 @@ public class PjSipService extends Service {
                 networkChangeReceiver = null;
                 connectivityManager = null;
             }
+            Log.d(TAG, "for (PjSipCall call : mCalls) {");
             for (PjSipCall call : mCalls) {
                 evict(call);
             }
+            Log.d(TAG, "for (PjSipAccount account : mAccounts) {");
             for (PjSipAccount account : mAccounts) {
                 evict(account);
             }
+            Log.d(TAG, "if (mTlsTransportId != 0) {");
             if (mTlsTransportId != 0) {
                 mEndpoint.transportClose(mTlsTransportId);
                 mTlsTransportId = 0;
             }
+            Log.d(TAG, "for (Object obj : mTrash) {");
             for (Object obj : mTrash) {
                 if (obj instanceof PersistentObject) {
                     ((PersistentObject) obj).delete();
                 }
             }
+            Log.d(TAG, "mTrash.clear();");
             mTrash.clear();
 
+            Log.d(TAG, "sensorManager.unregisterListener(proximitySensorListener);");
             sensorManager.unregisterListener(proximitySensorListener);
+            Log.d(TAG, "releaseWakeLock();");
             releaseWakeLock();
+            Log.d(TAG, "releaseWifiLock();");
             releaseWifiLock();
+            Log.d(TAG, "releaseProximityWakeLock();");
             releaseProximityWakeLock();
+            Log.d(TAG, "releaseAudioFocus();");
             releaseAudioFocus();
 
             if (mEndpoint != null) {
+                Log.d(TAG, "mEndpoint.libDestroy();");
                 mEndpoint.libDestroy();
+                Log.d(TAG, "mEndpoint.delete();");
                 mEndpoint.delete();
                 mEndpoint = null;
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 if (mWorkerThread != null) {
+                    Log.d(TAG, "mWorkerThread.quitSafely();");
                     mWorkerThread.quitSafely();
                     mWorkerThread = null;
                 }
@@ -325,7 +341,22 @@ public class PjSipService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "PJSIPService onDestroy()");
-        releaseSIPResources();
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        job(() -> {
+            try {
+                releaseSIPResources();
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Interrupted while waiting for SIP resource cleanup", e);
+        }
+
         super.onDestroy();
     }
 
@@ -438,21 +469,7 @@ public class PjSipService extends Service {
                 }
             }
 
-            CodecInfoVector2 codVect = mEndpoint.codecEnum2();
-            JSONObject codecs = new JSONObject();
-
-            for (int i = 0; i < codVect.size(); i++) {
-                CodecInfo codInfo = codVect.get(i);
-                String codId = codInfo.getCodecId();
-                short priority = codInfo.getPriority();
-                codecs.put(codId, priority);
-                codInfo.delete();
-            }
-
-            JSONObject settings = mServiceConfiguration.toJson();
-            settings.put("codecs", codecs);
-
-            mEmitter.fireStarted(intent, mAccounts, mCalls, settings);
+            mEmitter.fireStarted(intent, mAccounts, mCalls);
         } catch (Exception error) {
             Log.e(TAG, "Error while building codecs list", error);
             throw new RuntimeException(error);
@@ -461,7 +478,7 @@ public class PjSipService extends Service {
 
     private void handleStop(Intent intent) {
         try {
-            releaseSIPResources();
+            stopSelf();
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
             mEmitter.fireIntentHandled(intent, e);
@@ -1061,5 +1078,11 @@ public class PjSipService extends Service {
     private void releaseAudioFocus() {
         int result = mAudioManager.abandonAudioFocusRequest(focusRequest);
         Log.d(TAG, "Released audio focus: " + result);
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        stopSelf();
+        super.onTaskRemoved(rootIntent);
     }
 }
