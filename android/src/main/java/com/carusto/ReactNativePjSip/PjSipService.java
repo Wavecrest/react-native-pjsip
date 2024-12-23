@@ -361,7 +361,9 @@ public class PjSipService extends Service {
     }
 
     private void job(Runnable job) {
-        mHandler.post(job);
+        if (mHandler != null) {
+          mHandler.post(job);
+        }
     }
 
     protected synchronized AudDevManager getAudDevManager() {
