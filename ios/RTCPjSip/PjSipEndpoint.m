@@ -485,7 +485,9 @@ static PjSipEndpoint *sharedInstance = nil;
 }
 
 -(void)emmitCallChanged:(PjSipCall*) call {
-    [self emmitEvent:@"pjSipCallChanged" body:[call toJsonDictionary:self.isSpeaker]];
+    if (call != nil) {
+        [self emmitEvent:@"pjSipCallChanged" body:[call toJsonDictionary:self.isSpeaker]];
+    }
 }
 
 -(void)emmitCallTerminated:(PjSipCall*) call {
