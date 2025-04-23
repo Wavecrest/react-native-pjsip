@@ -18,7 +18,7 @@ public class PjSipBroadcastEmiter {
         this.context = context;
     }
 
-    public void fireStarted(Intent original, List<PjSipAccount> accounts, List<PjSipCall> calls, JSONObject settings) {
+    public void fireStarted(Intent original, List<PjSipAccount> accounts, List<PjSipCall> calls) {
         try {
             JSONArray dataAccounts = new JSONArray();
             for (PjSipAccount account : accounts) {
@@ -33,7 +33,6 @@ public class PjSipBroadcastEmiter {
             JSONObject data = new JSONObject();
             data.put("accounts", dataAccounts);
             data.put("calls", dataCalls);
-            data.put("settings", settings);
 
             Intent intent = new Intent();
             intent.setAction(PjActions.EVENT_STARTED);
