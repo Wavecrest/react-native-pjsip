@@ -83,7 +83,7 @@
     pjsua_call_get_info(self.id, &info);
 
     @try {
-        if (info.conf_slot != 0) {
+        if (info.conf_slot != 0 && pjsua_call_is_active(self.id)) {
             pj_status_t status = pjsua_conf_disconnect(0, info.conf_slot);
             if (status == PJ_SUCCESS) {
                 self.isMuted = true;
@@ -102,7 +102,7 @@
     pjsua_call_get_info(self.id, &info);
 
     @try {
-        if (info.conf_slot != 0) {
+        if (info.conf_slot != 0 && pjsua_call_is_active(self.id)) {
             pj_status_t status = pjsua_conf_connect(0, info.conf_slot);
             if (status == PJ_SUCCESS) {
                 self.isMuted = false;
