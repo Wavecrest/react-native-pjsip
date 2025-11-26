@@ -24,9 +24,12 @@ import android.util.Log;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import androidx.core.content.ContextCompat;
 import androidx.core.app.NotificationCompat;
 import android.net.ConnectivityManager;
 import android.net.NetworkRequest;
+import android.content.pm.PackageManager;
+import android.Manifest;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -145,25 +148,37 @@ public class PjSipService extends Service {
 
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        val hasMicPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                        val hasFgsMicPermission = if (Build.VERSION.SDK_INT >= 34)
-                            ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_MICROPHONE) == PackageManager.PERMISSION_GRANTED
-                        else
-                            true
+                        boolean hasMicPermission = false;
+                        boolean hasFgsMicPermission = true; // default true for < 34
+
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                                == PackageManager.PERMISSION_GRANTED) {
+                            hasMicPermission = true;
+                        }
+
+                        if (Build.VERSION.SDK_INT >= 34) {
+                            hasFgsMicPermission =
+                                    ContextCompat.checkSelfPermission(
+                                            this,
+                                            Manifest.permission.FOREGROUND_SERVICE_MICROPHONE
+                                    ) == PackageManager.PERMISSION_GRANTED;
+                        }
 
                         if (hasMicPermission && hasFgsMicPermission) {
-                            val fgType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
-                            startForeground(1, notification, fgType)
+                            int fgType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                                       | ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL;
+
+                            startForeground(1, notification, fgType);
                             isForeground = true;
                         } else {
-                            Log.w("MyService", "Missing required permissions, not starting foreground service")
+                            Log.w("MyService", "Missing required permissions, not starting foreground service");
                         }
                     } else {
-                        startForeground(1, notification)
+                        startForeground(1, notification);
                         isForeground = true;
                     }
-                } catch (e: Exception) {
-                    Log.e("MyService", "Failed to start foreground service", e)
+                } catch (Exception e) {
+                    Log.e("MyService", "Failed to start foreground service", e);
                 }
             }
         }
