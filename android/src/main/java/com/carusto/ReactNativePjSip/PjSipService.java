@@ -143,8 +143,28 @@ public class PjSipService extends Service {
                                     .setOngoing(true)
                                     .build();
 
-                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
-                isForeground = true;
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val hasMicPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                        val hasFgsMicPermission = if (Build.VERSION.SDK_INT >= 34)
+                            ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_MICROPHONE) == PackageManager.PERMISSION_GRANTED
+                        else
+                            true
+
+                        if (hasMicPermission && hasFgsMicPermission) {
+                            val fgType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+                            startForeground(1, notification, fgType)
+                            isForeground = true;
+                        } else {
+                            Log.w("MyService", "Missing required permissions, not starting foreground service")
+                        }
+                    } else {
+                        startForeground(1, notification)
+                        isForeground = true;
+                    }
+                } catch (e: Exception) {
+                    Log.e("MyService", "Failed to start foreground service", e)
+                }
             }
         }
 
