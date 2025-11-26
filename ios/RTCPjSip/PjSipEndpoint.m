@@ -4,7 +4,7 @@
 #import <React/RCTConvert.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
-#import <VialerPJSIP/pjsua.h>
+#import <pjsua-lib/pjsua.h>
 #import <Reachability/Reachability.h>
 
 #import <ifaddrs.h>

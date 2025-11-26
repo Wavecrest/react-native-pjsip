@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.homepage     = package['homepage']
   s.platform     = :ios, "15.6"
 
-  s.source       = { :git => "https://github.com/Wavecrest/react-native-pjsip.git" }
+  s.source       = { :path => '.' }
   s.source_files  = "ios/RTCPjSip/**/*.{h,m}"
 
   s.vendored_frameworks='ios/VialerPJSIP.xcframework'
