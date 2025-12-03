@@ -354,7 +354,10 @@ static PjSipEndpoint *sharedInstance = nil;
     pj_status_t status = pjsua_call_make_call(account.id, &callDest, &callSettings, NULL, &msgData, &callId);
 
     if (status != PJ_SUCCESS) {
-        [NSException raise:@"Failed to make a call" format:@"Failed to make a call"];
+        char errbuf[256];
+        pj_strerror(status, errbuf, sizeof(errbuf));
+        NSString *reason = [NSString stringWithFormat:@"make_call failed: %s (status=%d)", errbuf, status];
+        [NSException raise:@"PJSIPCallError" format:@"%@", reason];
     }
     pj_pool_release(pool);
 
