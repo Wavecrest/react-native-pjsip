@@ -96,6 +96,13 @@ public class PjSipService extends Service {
         return mEmitter;
     }
 
+    private void reportError(String source, Throwable error) {
+        Log.e(TAG, "Error in \"" + source + "\"", error);
+        if (mEmitter != null) {
+            mEmitter.fireError(source, error);
+        }
+    }
+
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -178,7 +185,7 @@ public class PjSipService extends Service {
                         isForeground = true;
                     }
                 } catch (Exception e) {
-                    Log.e("MyService", "Failed to start foreground service", e);
+                    reportError("start_foreground", e);
                 }
             }
         }
@@ -191,7 +198,7 @@ public class PjSipService extends Service {
                     }
                     handle(intent);
                 } catch (Exception e) {
-                    Log.e(TAG, "Exception during job(this::load)", e);
+                    reportError("service_intent:" + intent.getAction(), e);
                 }
             });
         }
@@ -209,7 +216,7 @@ public class PjSipService extends Service {
                 mEndpoint.handleIpChange(ipChangeParam);
                 mEmitter.fireIpTransitioned();
             } catch (Exception e) {
-                e.printStackTrace();
+                reportError("ip_change", e);
             }
         });
     }
@@ -298,7 +305,7 @@ public class PjSipService extends Service {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error while starting PJSIP", e);
+            reportError("endpoint_start", e);
         }
     }
 
@@ -364,7 +371,7 @@ public class PjSipService extends Service {
                 }
             }
         } catch (Exception e) {
-            Log.d(TAG, "Failed to destroy PjSip library", e);
+            reportError("release_resources", e);
         }
 
         mInitialized = false;
@@ -512,8 +519,7 @@ public class PjSipService extends Service {
 
             mEmitter.fireStarted(intent, mAccounts, mCalls);
         } catch (Exception error) {
-            Log.e(TAG, "Error while building codecs list", error);
-            throw new RuntimeException(error);
+            mEmitter.fireIntentHandled(intent, error);
         }
     }
 
@@ -962,7 +968,7 @@ public class PjSipService extends Service {
 
     void emmitCallStateChanged(PjSipCall call, OnCallStateParam prm) {
         try {
-            if (call == null && !call.isActive()) {
+            if (call == null || !call.isActive()) {
                 return;
             }
             if (call.getInfo().getState() == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
@@ -971,13 +977,13 @@ public class PjSipService extends Service {
                 emmitCallChanged(call, prm);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to handle call state event", e);
+            reportError("call_state_changed", e);
         }
     }
 
     void emmitCallChanged(PjSipCall call, OnCallStateParam prm) {
         try {
-            if (call == null && !call.isActive()) {
+            if (call == null || !call.isActive()) {
                 return;
             }
 
@@ -993,7 +999,7 @@ public class PjSipService extends Service {
                 }
             });
         } catch (Exception e) {
-            Log.e(TAG, "Failed to retrieve call state", e);
+            reportError("call_changed", e);
         }
 
         mEmitter.fireCallChanged(call);
@@ -1023,7 +1029,7 @@ public class PjSipService extends Service {
             try {
                 call.hold();
             } catch (Exception e) {
-                Log.e(TAG, "Failed to put call on hold", e);
+                reportError("call_hold_parallel", e);
             }
         }
     }

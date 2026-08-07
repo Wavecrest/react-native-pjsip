@@ -55,6 +55,7 @@ public class PjActions {
     public static final String EVENT_CALL_SCREEN_LOCKED = "com.carusto.call.screen.locked";
     public static final String EVENT_MESSAGE_RECEIVED = "com.carusto.message.received";
     public static final String EVENT_HANDLED = "com.carusto.handled";
+    public static final String EVENT_ERROR = "com.carusto.error";
 
     public static Intent createStartIntent(int callbackId, ReadableMap configuration, Context context) {
         Intent intent = new Intent(context, PjSipService.class);

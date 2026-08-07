@@ -35,6 +35,7 @@
 -(void)changeOrientation: (NSString*) orientation;
 -(void)changeCodecSettings: (NSDictionary*) codecSettings;
 
+-(void)emmitError:(NSString*) context message:(NSString*) message;
 -(void)emmitRegistrationChanged:(PjSipAccount*) account;
 -(void)emmitIpChanged;
 -(void)emmitIpTransitioned;

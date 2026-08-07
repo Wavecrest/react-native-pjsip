@@ -39,7 +39,26 @@ endpoint.on("call_received", (call) => {});
 endpoint.on("call_changed", (call) => {});
 endpoint.on("call_terminated", (call) => {});
 endpoint.on("call_screen_locked", (call) => {}); // Android only
+endpoint.on("sip_error", (error) => {}); // Native-side errors, see below
 ```
+
+### Error tracking
+
+Native errors and exceptions (pjsip failures, audio session issues, dropped intents) are emitted as `sip_error` events:
+
+```javascript
+endpoint.on("sip_error", (error) => {
+  // error.context - where the error occurred (e.g. "call_make", "endpoint_start", "audio_session_activate")
+  // error.message - error description (includes pjsip status text when available)
+  // error.stack   - native stack trace (Android only)
+  Sentry.captureMessage(`pjsip:${error.context}: ${error.message}`, {
+    level: "error",
+    extra: error,
+  });
+});
+```
+
+Errors that happen while handling an explicit request (e.g. `makeCall`) are additionally still delivered as promise rejections to the caller.
 
 Account creating is pretty strainghforward.
 

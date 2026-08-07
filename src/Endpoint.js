@@ -61,6 +61,9 @@ export default class Endpoint extends EventEmitter {
         DeviceEventEmitter.addListener('pjSipCallScreenLocked', this._onCallScreenLocked.bind(this));
         DeviceEventEmitter.addListener('pjSipMessageReceived', this._onMessageReceived.bind(this));
         DeviceEventEmitter.addListener('pjSipConnectivityChanged', this._onConnectivityChanged.bind(this));
+
+        // Subscribe to native error events
+        DeviceEventEmitter.addListener('pjSipError', this._onError.bind(this));
     }
 
     /**
@@ -693,6 +696,25 @@ export default class Endpoint extends EventEmitter {
          * @property bool available True if connectivity matches current Network settings, otherwise false.
          */
         this.emit("connectivity_changed", available);
+    }
+
+    /**
+     * @fires Endpoint#sip_error
+     * @private
+     * @param data {Object}
+     */
+    _onError(data) {
+        /**
+         * Fires when an error or exception occurs on the native side.
+         * Subscribe to forward these to an error tracker (e.g. Sentry).
+         *
+         * @event Endpoint#sip_error
+         * @property {Object} error
+         * @property {String} error.context - Where the error occurred (e.g. "call_make", "endpoint_start").
+         * @property {String} error.message - Error description.
+         * @property {String} [error.stack] - Native stack trace (Android only).
+         */
+        this.emit("sip_error", data);
     }
 
     /**

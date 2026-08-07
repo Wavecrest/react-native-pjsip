@@ -66,9 +66,28 @@ public class PjSipBroadcastEmiter {
         Intent intent = new Intent();
         intent.setAction(PjActions.EVENT_HANDLED);
         intent.putExtra("callback_id", original.getIntExtra("callback_id", -1));
-        intent.putExtra("exception", e.getMessage());
+        intent.putExtra("exception", e.toString());
 
         context.sendBroadcast(intent);
+
+        fireError(original.getAction(), e);
+    }
+
+    public void fireError(String source, Throwable error) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("context", source != null ? source : "unknown");
+            data.put("message", String.valueOf(error));
+            data.put("stack", Log.getStackTraceString(error));
+
+            Intent intent = new Intent();
+            intent.setAction(PjActions.EVENT_ERROR);
+            intent.putExtra("data", data.toString());
+
+            context.sendBroadcast(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to send ERROR event", e);
+        }
     }
 
     public void fireAccountCreated(Intent original, PjSipAccount account) {

@@ -2,6 +2,7 @@
 #import <React/RCTEventDispatcher.h>
 
 #import "PjSipCall.h"
+#import "PjSipEndpoint.h"
 #import "PjSipUtil.h"
 
 @implementation PjSipCall
@@ -28,7 +29,8 @@
     pj_status_t status = pjsua_call_hangup(self.id, 0, NULL, NULL);
 
     if (status != PJ_SUCCESS) {
-        NSLog(@"Failed to hangup a call (%d)", status);
+        [[PjSipEndpoint instance] emmitError:@"call_hangup"
+                                     message:[NSString stringWithFormat:@"call %d: %@", self.id, [PjSipUtil pjStatusToText:status]]];
     } else {
         NSLog(@"Hangup a call (%d)", status);
     }
@@ -99,7 +101,8 @@
         self.isMuted = true;
         NSLog(@"Muted call with ID %d", self.id);
     } else {
-        NSLog(@"Failed to mute call with ID %d. Error code: %d", self.id, status);
+        [[PjSipEndpoint instance] emmitError:@"call_mute"
+                                     message:[NSString stringWithFormat:@"call %d: %@", self.id, [PjSipUtil pjStatusToText:status]]];
     }
 }
 
@@ -114,11 +117,13 @@
                 self.isMuted = false;
                 NSLog(@"Unmuted call with ID %d", self.id);
             } else {
-                NSLog(@"Failed to unmute call with ID %d. Error code: %d", self.id, status);
+                [[PjSipEndpoint instance] emmitError:@"call_unmute"
+                                             message:[NSString stringWithFormat:@"call %d: %@", self.id, [PjSipUtil pjStatusToText:status]]];
             }
         }
     } @catch (NSException *exception) {
-        NSLog(@"Exception occurred while unmuting call with ID %d: %@", self.id, exception);
+        [[PjSipEndpoint instance] emmitError:@"call_unmute"
+                                     message:[NSString stringWithFormat:@"call %d: %@", self.id, exception.reason]];
     }
 }
 
@@ -170,14 +175,16 @@
         if (status == PJ_SUCCESS) {
             NSLog(@"Successfully connected call with ID %d to sound device.", self.id);
         } else {
-            NSLog(@"Failed to connect call with ID %d to sound device. Error code: %d", self.id, status);
+            [[PjSipEndpoint instance] emmitError:@"call_media_connect_playback"
+                                         message:[NSString stringWithFormat:@"call %d: %@", self.id, [PjSipUtil pjStatusToText:status]]];
         }
 
         status = pjsua_conf_connect(0, info.conf_slot);
         if (status == PJ_SUCCESS) {
             NSLog(@"Successfully connected sound device to call with ID %d.", self.id);
         } else {
-            NSLog(@"Failed to connect sound device to call with ID %d. Error code: %d", self.id, status);
+            [[PjSipEndpoint instance] emmitError:@"call_media_connect_capture"
+                                         message:[NSString stringWithFormat:@"call %d: %@", self.id, [PjSipUtil pjStatusToText:status]]];
         }
     } else {
         NSLog(@"Media is not active for call with ID %d. Status: %d", self.id, status);

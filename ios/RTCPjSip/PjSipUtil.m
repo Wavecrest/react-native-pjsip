@@ -14,6 +14,12 @@
                  encoding:NSUTF8StringEncoding];
 }
 
++(NSString *) pjStatusToText: (pj_status_t) status {
+    char errbuf[PJ_ERR_MSG_SIZE];
+    pj_strerror(status, errbuf, sizeof(errbuf));
+    return [NSString stringWithFormat:@"%s (status=%d)", errbuf, (int) status];
+}
+
 +(BOOL) isEmptyString : (NSString *)string
 {
     if([string isKindOfClass:[NSNull class]] || [string length] == 0 ||

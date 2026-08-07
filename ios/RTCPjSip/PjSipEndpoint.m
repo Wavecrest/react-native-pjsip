@@ -17,6 +17,7 @@
 @implementation PjSipEndpoint {
     Reachability *reachability;
     NSString *lastIpAddress;
+    NSMutableArray *pendingErrors;
 }
 
 static PjSipEndpoint *sharedInstance = nil;
@@ -35,13 +36,14 @@ static PjSipEndpoint *sharedInstance = nil;
     self = [super init];
     self.accounts = [[NSMutableDictionary alloc] initWithCapacity:12];
     self.calls = [[NSMutableDictionary alloc] initWithCapacity:12];
+    pendingErrors = [[NSMutableArray alloc] init];
 
     pj_status_t status;
 
     // Create pjsua first
     status = pjsua_create();
     if (status != PJ_SUCCESS) {
-        NSLog(@"Error in pjsua_create()");
+        [self emmitError:@"pjsua_create" message:[PjSipUtil pjStatusToText:status]];
     }
 
     // Init pjsua
@@ -100,7 +102,7 @@ static PjSipEndpoint *sharedInstance = nil;
         // Init the pjsua
         status = pjsua_init(&cfg, &log_cfg, &mediaConfig);
         if (status != PJ_SUCCESS) {
-            NSLog(@"Error in pjsua_init()");
+            [self emmitError:@"pjsua_init" message:[PjSipUtil pjStatusToText:status]];
         }
     }
 
@@ -145,14 +147,16 @@ static PjSipEndpoint *sharedInstance = nil;
         status = pjsua_transport_create(PJSIP_TRANSPORT_TLS, &cfg, &id);
 
         if (status != PJ_SUCCESS) {
-            NSLog(@"Error creating TLS transport");
+            [self emmitError:@"pjsua_transport_create_tls" message:[PjSipUtil pjStatusToText:status]];
         } else {
             self.tlsTransportId = id;
         }
     }
 
     status = pjsua_start();
-    if (status != PJ_SUCCESS) NSLog(@"Error starting pjsua");
+    if (status != PJ_SUCCESS) {
+        [self emmitError:@"pjsua_start" message:[PjSipUtil pjStatusToText:status]];
+    }
 
     reachability = [Reachability reachabilityForInternetConnection];
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -202,7 +206,7 @@ static PjSipEndpoint *sharedInstance = nil;
         ip_change_param.restart_lis_delay = PJSUA_TRANSPORT_RESTART_DELAY_TIME;
         pj_status_t status = pjsua_handle_ip_change(&ip_change_param);
         if (status != PJ_SUCCESS) {
-            NSLog(@"Failed to handle IP change: %d", status);
+            [self emmitError:@"ip_change" message:[PjSipUtil pjStatusToText:status]];
         } else {
             NSLog(@"IP change handled successfully");
             [self emmitIpTransitioned];
@@ -211,6 +215,15 @@ static PjSipEndpoint *sharedInstance = nil;
 }
 
 - (NSDictionary *)start: (NSDictionary *)config {
+    // Flush errors that occurred before the bridge was attached (endpoint init).
+    if ([pendingErrors count] > 0) {
+        NSArray *buffered = [pendingErrors copy];
+        [pendingErrors removeAllObjects];
+        for (NSDictionary *body in buffered) {
+            [self emmitEvent:@"pjSipError" body:body];
+        }
+    }
+
     NSMutableArray *accountsResult = [[NSMutableArray alloc] initWithCapacity:[@([self.accounts count]) unsignedIntegerValue]];
     NSMutableArray *callsResult = [[NSMutableArray alloc] initWithCapacity:[@([self.calls count]) unsignedIntegerValue]];
     NSDictionary *settingsResult = @{ @"codecs": [self getCodecs] };
@@ -250,8 +263,9 @@ static PjSipEndpoint *sharedInstance = nil;
     [self.calls removeAllObjects];
     [self.accounts removeAllObjects];
 
-    if (pjsua_destroy() != PJ_SUCCESS) {
-        NSLog(@"Error destroying pjsua");
+    pj_status_t destroyStatus = pjsua_destroy();
+    if (destroyStatus != PJ_SUCCESS) {
+        [self emmitError:@"pjsua_destroy" message:[PjSipUtil pjStatusToText:destroyStatus]];
     }
 
     self.udpTransportId = PJSUA_INVALID_ID;
@@ -262,7 +276,7 @@ static PjSipEndpoint *sharedInstance = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [[AVAudioSession sharedInstance] setActive:NO error:&error];
     if (error) {
-        NSLog(@"Error deactivating audio session: %@", error);
+        [self emmitError:@"audio_session_deactivate" message:[error localizedDescription]];
     }
 }
 
@@ -313,24 +327,21 @@ static PjSipEndpoint *sharedInstance = nil;
                   withOptions:AVAudioSessionCategoryOptionAllowBluetooth
                         error:&error];
     if (error) {
-        NSLog(@"Error setting audio session category: %@", error);
+        [self emmitError:@"audio_session_category" message:[error localizedDescription]];
     }
 
     [audioSession setMode:AVAudioSessionModeVoiceChat error:&error];
     if (error) {
-        NSLog(@"Error setting audio session mode: %@", error);
+        [self emmitError:@"audio_session_mode" message:[error localizedDescription]];
     }
 
     BOOL success = [audioSession setActive:YES error:&error];
-    if (!success) {
-        NSLog(@"Audio session activation failed: %@", error);
-    }
-    if (error) {
-        NSLog(@"Error activating audio session: %@", error);
+    if (!success || error) {
+        [self emmitError:@"audio_session_activate" message:[error localizedDescription]];
     }
     [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:&error];
     if (error) {
-        NSLog(@"Error using earpiece: %@", error);
+        [self emmitError:@"audio_session_override_earpiece" message:[error localizedDescription]];
     }
     self.isSpeaker = false;
 
@@ -393,7 +404,7 @@ static PjSipEndpoint *sharedInstance = nil;
 
     [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:&error];
     if (error) {
-        NSLog(@"Error overriding audio port to speaker: %@", error);
+        [self emmitError:@"audio_session_override_speaker" message:[error localizedDescription]];
     }
 
     // Additional code to emit call changed events
@@ -410,7 +421,7 @@ static PjSipEndpoint *sharedInstance = nil;
 
     [audioSession overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:&error];
     if (error) {
-        NSLog(@"Error overriding audio port to earpiece: %@", error);
+        [self emmitError:@"audio_session_override_earpiece" message:[error localizedDescription]];
     }
 
     // Additional code to emit call changed events
@@ -470,6 +481,23 @@ static PjSipEndpoint *sharedInstance = nil;
 
 
 #pragma mark - Events
+
+-(void)emmitError:(NSString*) context message:(NSString*) message {
+    NSDictionary *body = @{
+        @"context": context != nil ? context : @"unknown",
+        @"message": message != nil ? message : @"unknown"
+    };
+
+    NSLog(@"PjSip error [%@]: %@", context, message);
+
+    if (self.bridge == nil) {
+        // Endpoint initializes before the RN bridge is attached — buffer and flush on start.
+        [pendingErrors addObject:body];
+        return;
+    }
+
+    [self emmitEvent:@"pjSipError" body:body];
+}
 
 -(void)emmitRegistrationChanged:(PjSipAccount*) account {
     [self emmitEvent:@"pjSipRegistrationChanged" body:[account toJsonDictionary]];

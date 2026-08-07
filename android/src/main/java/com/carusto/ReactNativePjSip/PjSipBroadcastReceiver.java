@@ -49,6 +49,7 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
         filter.addAction(PjActions.EVENT_CALL_SCREEN_LOCKED);
         filter.addAction(PjActions.EVENT_MESSAGE_RECEIVED);
         filter.addAction(PjActions.EVENT_HANDLED);
+        filter.addAction(PjActions.EVENT_ERROR);
         filter.addAction(PjActions.EVENT_IP_CHANGED);
         filter.addAction(PjActions.EVENT_IP_TRANSITIONED);
 
@@ -88,6 +89,9 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
                 break;
             case PjActions.EVENT_CALL_TERMINATED:
                 onCallTerminated(intent);
+                break;
+            case PjActions.EVENT_ERROR:
+                onError(intent);
                 break;
             default:
                 onCallback(intent);
@@ -132,6 +136,12 @@ public class PjSipBroadcastReceiver extends BroadcastReceiver {
         String json = intent.getStringExtra("data");
         Object params = ArgumentUtils.fromJson(json);
         emit("pjSipCallTerminated", params);
+    }
+
+    private void onError(Intent intent) {
+        String json = intent.getStringExtra("data");
+        Object params = ArgumentUtils.fromJson(json);
+        emit("pjSipError", params);
     }
 
     private void onCallback(Intent intent) {

@@ -1,5 +1,6 @@
 #import "PjSipEndpoint.h"
 #import "PjSipModule.h"
+#import "PjSipUtil.h"
 
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
@@ -42,34 +43,64 @@
 }
 
 RCT_EXPORT_METHOD(start: (NSDictionary *) config callback: (RCTResponseSenderBlock) callback) {
-    [PjSipEndpoint instance].bridge = self.bridge;
+    @try {
+        [PjSipEndpoint instance].bridge = self.bridge;
 
-    NSDictionary *result = [[PjSipEndpoint instance] start: config];
-    callback(@[@TRUE, result]);
+        NSDictionary *result = [[PjSipEndpoint instance] start: config];
+        callback(@[@TRUE, result]);
+    }
+    @catch (NSException * e) {
+        [[PjSipEndpoint instance] emmitError:@"start" message:e.reason];
+        callback(@[@FALSE, e.reason ?: @"start failed"]);
+    }
 }
 
 RCT_EXPORT_METHOD(stop: (RCTResponseSenderBlock) callback) {
-    [PjSipEndpoint instance].bridge = self.bridge;
+    @try {
+        [PjSipEndpoint instance].bridge = self.bridge;
 
-    [[PjSipEndpoint instance] stop];
-    callback(@[@TRUE]);
+        [[PjSipEndpoint instance] stop];
+        callback(@[@TRUE]);
+    }
+    @catch (NSException * e) {
+        [[PjSipEndpoint instance] emmitError:@"stop" message:e.reason];
+        callback(@[@FALSE, e.reason ?: @"stop failed"]);
+    }
 }
 
 RCT_EXPORT_METHOD(updateStunServers: (int) accountId stunServerList:(NSArray *) stunServerList callback:(RCTResponseSenderBlock) callback) {
-    [[PjSipEndpoint instance] updateStunServers:accountId stunServerList:stunServerList];
-    callback(@[@TRUE]);
+    @try {
+        [[PjSipEndpoint instance] updateStunServers:accountId stunServerList:stunServerList];
+        callback(@[@TRUE]);
+    }
+    @catch (NSException * e) {
+        [[PjSipEndpoint instance] emmitError:@"update_stun_servers" message:e.reason];
+        callback(@[@FALSE, e.reason ?: @"updateStunServers failed"]);
+    }
 }
 
 #pragma mark - Account Actions
 
 RCT_EXPORT_METHOD(createAccount: (NSDictionary *) config callback:(RCTResponseSenderBlock) callback) {
-    PjSipAccount *account = [[PjSipEndpoint instance] createAccount:config];
-    callback(@[@TRUE, [account toJsonDictionary]]);
+    @try {
+        PjSipAccount *account = [[PjSipEndpoint instance] createAccount:config];
+        callback(@[@TRUE, [account toJsonDictionary]]);
+    }
+    @catch (NSException * e) {
+        [[PjSipEndpoint instance] emmitError:@"account_create" message:e.reason];
+        callback(@[@FALSE, e.reason ?: @"createAccount failed"]);
+    }
 }
 
 RCT_EXPORT_METHOD(deleteAccount: (int) accountId callback:(RCTResponseSenderBlock) callback) {
-    [[PjSipEndpoint instance] deleteAccount:accountId];
-    callback(@[@TRUE]);
+    @try {
+        [[PjSipEndpoint instance] deleteAccount:accountId];
+        callback(@[@TRUE]);
+    }
+    @catch (NSException * e) {
+        [[PjSipEndpoint instance] emmitError:@"account_delete" message:e.reason];
+        callback(@[@FALSE, e.reason ?: @"deleteAccount failed"]);
+    }
 }
 
 RCT_EXPORT_METHOD(registerAccount: (int) accountId renew:(BOOL) renew callback:(RCTResponseSenderBlock) callback) {
@@ -82,7 +113,8 @@ RCT_EXPORT_METHOD(registerAccount: (int) accountId renew:(BOOL) renew callback:(
         callback(@[@TRUE]);
     }
     @catch (NSException * e) {
-        callback(@[@FALSE, e.reason]);
+        [[PjSipEndpoint instance] emmitError:@"account_register" message:e.reason];
+        callback(@[@FALSE, e.reason ?: @"registerAccount failed"]);
     }
 }
 
@@ -101,7 +133,8 @@ RCT_EXPORT_METHOD(makeCall: (int) accountId destination: (NSString *) destinatio
         callback(@[@TRUE, [call toJsonDictionary:endpoint.isSpeaker]]);
     }
     @catch (NSException * e) {
-        callback(@[@FALSE, e.reason]);
+        [[PjSipEndpoint instance] emmitError:@"call_make" message:e.reason];
+        callback(@[@FALSE, e.reason ?: @"makeCall failed"]);
     }
 }
 
@@ -246,10 +279,12 @@ RCT_EXPORT_METHOD(dtmfCall: (int) callId digits: (NSString *) digits callback:(R
 
 RCT_EXPORT_METHOD(useSpeaker: (int) callId callback:(RCTResponseSenderBlock) callback) {
     [[PjSipEndpoint instance] useSpeaker];
+    callback(@[@TRUE]);
 }
 
 RCT_EXPORT_METHOD(useEarpiece: (int) callId callback:(RCTResponseSenderBlock) callback) {
     [[PjSipEndpoint instance] useEarpiece];
+    callback(@[@TRUE]);
 }
 
 RCT_EXPORT_METHOD(activateAudioSession: (RCTResponseSenderBlock) callback) {
@@ -257,12 +292,17 @@ RCT_EXPORT_METHOD(activateAudioSession: (RCTResponseSenderBlock) callback) {
     pj_status_t status;
     status = pjsua_set_snd_dev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV, PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);
     if (status != PJ_SUCCESS) {
-        NSLog(@"Failed to active audio session");
+        NSString *message = [PjSipUtil pjStatusToText:status];
+        [[PjSipEndpoint instance] emmitError:@"audio_session_activate_snd_dev" message:message];
+        callback(@[@FALSE, message]);
+        return;
     }
+    callback(@[@TRUE]);
 }
 
 RCT_EXPORT_METHOD(deactivateAudioSession: (RCTResponseSenderBlock) callback) {
     pjsua_set_no_snd_dev();
+    callback(@[@TRUE]);
 }
 
 #pragma mark - Settings
