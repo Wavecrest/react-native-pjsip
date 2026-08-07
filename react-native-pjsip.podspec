@@ -10,12 +10,12 @@ Pod::Spec.new do |s|
 
   s.authors      = package['author']
   s.homepage     = package['homepage']
-  s.platform     = :ios, "13.4"
+  s.platform     = :ios, "15.6"
 
-  s.source       = { :git => "https://github.com/Wavecrest/react-native-pjsip.git" }
+  s.source       = { :path => '.' }
   s.source_files  = "ios/RTCPjSip/**/*.{h,m}"
 
-  s.vendored_frameworks='ios/VialerPJSIP.framework'
+  s.vendored_frameworks='ios/VialerPJSIP.xcframework'
   s.xcconfig = {
     'GCC_PREPROCESSOR_DEFINITIONS' => 'PJ_AUTOCONF=1',
     'USE_HEADERMAP' => 'NO',

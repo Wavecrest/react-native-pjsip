@@ -82,18 +82,24 @@
     pjsua_call_info info;
     pjsua_call_get_info(self.id, &info);
 
-    @try {
-        if (info.conf_slot != 0) {
-            pj_status_t status = pjsua_conf_disconnect(0, info.conf_slot);
-            if (status == PJ_SUCCESS) {
-                self.isMuted = true;
-                NSLog(@"Muted call with ID %d", self.id);
-            } else {
-                NSLog(@"Failed to mute call with ID %d. Error code: %d", self.id, status);
-            }
-        }
-    } @catch (NSException *exception) {
-        NSLog(@"Exception occurred while muting call with ID %d: %@", self.id, exception);
+    if (!pjsua_call_is_active(self.id) ||
+        info.conf_slot == PJSUA_INVALID_ID) {
+        NSLog(@"Skip mute: call %d not active or no conf slot (slot=%d)", self.id, info.conf_slot);
+        return;
+    }
+
+    pjsua_conf_port_info pi;
+    if (pjsua_conf_get_port_info(info.conf_slot, &pi) != PJ_SUCCESS) {
+        NSLog(@"Skip mute: conf port %d not found for call %d", info.conf_slot, self.id);
+        return;
+    }
+
+    pj_status_t status = pjsua_conf_disconnect(0, info.conf_slot);
+    if (status == PJ_SUCCESS) {
+        self.isMuted = true;
+        NSLog(@"Muted call with ID %d", self.id);
+    } else {
+        NSLog(@"Failed to mute call with ID %d. Error code: %d", self.id, status);
     }
 }
 
@@ -102,7 +108,7 @@
     pjsua_call_get_info(self.id, &info);
 
     @try {
-        if (info.conf_slot != 0) {
+        if (info.conf_slot != 0 && pjsua_call_is_active(self.id)) {
             pj_status_t status = pjsua_conf_connect(0, info.conf_slot);
             if (status == PJ_SUCCESS) {
                 self.isMuted = false;

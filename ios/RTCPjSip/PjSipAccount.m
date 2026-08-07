@@ -121,7 +121,7 @@
 
         status = pjsua_acc_add(&cfg, PJ_TRUE, &account_id);
         if (status != PJ_SUCCESS) {
-            [NSException raise:@"Failed to create account" format:@"See device logs for more details."];
+            [NSException raise:@"Failed to create account" format:@"Failed to create account"];
         }
 
         self.id = account_id;
@@ -138,7 +138,7 @@
 - (void) register: (bool) renew {
     pj_status_t status = pjsua_acc_set_registration((pjsua_acc_id)self.id, renew ? PJ_TRUE : PJ_FALSE);
     if (status != PJ_SUCCESS) {
-        [NSException raise:@"Failed to register account" format:@"See device logs for more details."];
+        [NSException raise:@"Failed to register account" format:@"Failed to register account"];
     }
 }
 

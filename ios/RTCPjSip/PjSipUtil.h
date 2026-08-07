@@ -1,5 +1,5 @@
 #import <React/RCTUtils.h>
-#import <VialerPJSIP/pjsua.h>
+#import <pjsua-lib/pjsua.h>
 
 @interface PjSipUtil : NSObject
 

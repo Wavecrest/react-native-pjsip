@@ -4,7 +4,7 @@
 #import <React/RCTConvert.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
-#import <VialerPJSIP/pjsua.h>
+#import <pjsua-lib/pjsua.h>
 #import <Reachability/Reachability.h>
 
 #import <ifaddrs.h>
@@ -354,7 +354,10 @@ static PjSipEndpoint *sharedInstance = nil;
     pj_status_t status = pjsua_call_make_call(account.id, &callDest, &callSettings, NULL, &msgData, &callId);
 
     if (status != PJ_SUCCESS) {
-        [NSException raise:@"Failed to make a call" format:@"See device logs for more details."];
+        char errbuf[256];
+        pj_strerror(status, errbuf, sizeof(errbuf));
+        NSString *reason = [NSString stringWithFormat:@"make_call failed: %s (status=%d)", errbuf, status];
+        [NSException raise:@"PJSIPCallError" format:@"%@", reason];
     }
     pj_pool_release(pool);
 

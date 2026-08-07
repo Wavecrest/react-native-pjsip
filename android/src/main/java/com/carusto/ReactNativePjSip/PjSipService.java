@@ -24,9 +24,12 @@ import android.util.Log;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import androidx.core.content.ContextCompat;
 import androidx.core.app.NotificationCompat;
 import android.net.ConnectivityManager;
 import android.net.NetworkRequest;
+import android.content.pm.PackageManager;
+import android.Manifest;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -120,7 +123,9 @@ public class PjSipService extends Service {
             mPowerManager = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
             mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             sensorManager = (SensorManager) getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
-            proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+            if (sensorManager != null) {
+              proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+            }
 
             job(() -> {
                 acquireAudioFocus();
@@ -141,8 +146,40 @@ public class PjSipService extends Service {
                                     .setOngoing(true)
                                     .build();
 
-                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
-                isForeground = true;
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        boolean hasMicPermission = false;
+                        boolean hasFgsMicPermission = true; // default true for < 34
+
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                                == PackageManager.PERMISSION_GRANTED) {
+                            hasMicPermission = true;
+                        }
+
+                        if (Build.VERSION.SDK_INT >= 34) {
+                            hasFgsMicPermission =
+                                    ContextCompat.checkSelfPermission(
+                                            this,
+                                            Manifest.permission.FOREGROUND_SERVICE_MICROPHONE
+                                    ) == PackageManager.PERMISSION_GRANTED;
+                        }
+
+                        if (hasMicPermission && hasFgsMicPermission) {
+                            int fgType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                                       | ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL;
+
+                            startForeground(1, notification, fgType);
+                            isForeground = true;
+                        } else {
+                            Log.w("MyService", "Missing required permissions, not starting foreground service");
+                        }
+                    } else {
+                        startForeground(1, notification);
+                        isForeground = true;
+                    }
+                } catch (Exception e) {
+                    Log.e("MyService", "Failed to start foreground service", e);
+                }
             }
         }
 
@@ -299,7 +336,9 @@ public class PjSipService extends Service {
             mTrash.clear();
 
             Log.d(TAG, "sensorManager.unregisterListener(proximitySensorListener);");
-            sensorManager.unregisterListener(proximitySensorListener);
+            if (sensorManager != null && proximitySensorListener != null) {
+                sensorManager.unregisterListener(proximitySensorListener);
+            }
             Log.d(TAG, "releaseWakeLock();");
             releaseWakeLock();
             Log.d(TAG, "releaseWifiLock();");
@@ -691,6 +730,9 @@ public class PjSipService extends Service {
         try {
             int callId = intent.getIntExtra("call_id", -1);
             PjSipCall call = findCall(callId);
+            if (call == null || !call.isActive()) {
+                return;
+            }
             call.hangup(new CallOpParam(true));
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
@@ -753,6 +795,9 @@ public class PjSipService extends Service {
         try {
             int callId = intent.getIntExtra("call_id", -1);
             PjSipCall call = findCall(callId);
+            if (call == null || !call.isActive()) {
+                return;
+            }
             call.mute();
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
@@ -764,6 +809,9 @@ public class PjSipService extends Service {
         try {
             int callId = intent.getIntExtra("call_id", -1);
             PjSipCall call = findCall(callId);
+            if (call == null || !call.isActive()) {
+                return;
+            }
             call.unmute();
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
@@ -839,6 +887,9 @@ public class PjSipService extends Service {
             int callId = intent.getIntExtra("call_id", -1);
             String digits = intent.getStringExtra("digits");
             PjSipCall call = findCall(callId);
+            if (call == null || !call.isActive()) {
+                return;
+            }
             call.dialDtmf(digits);
             mEmitter.fireIntentHandled(intent);
         } catch (Exception e) {
@@ -889,7 +940,7 @@ public class PjSipService extends Service {
 
     private PjSipCall findCall(int id) throws Exception {
         for (PjSipCall call : mCalls) {
-            if (call.getId() == id) {
+            if (call != null && call.getId() == id) {
                 return call;
             }
         }
@@ -911,6 +962,9 @@ public class PjSipService extends Service {
 
     void emmitCallStateChanged(PjSipCall call, OnCallStateParam prm) {
         try {
+            if (call == null && !call.isActive()) {
+                return;
+            }
             if (call.getInfo().getState() == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
                 emmitCallTerminated(call, prm);
             } else {
@@ -923,6 +977,10 @@ public class PjSipService extends Service {
 
     void emmitCallChanged(PjSipCall call, OnCallStateParam prm) {
         try {
+            if (call == null && !call.isActive()) {
+                return;
+            }
+
             final int callId = call.getId();
             final int callState = call.getInfo().getState();
 
@@ -947,6 +1005,9 @@ public class PjSipService extends Service {
     }
 
     void emmitCallUpdated(PjSipCall call) {
+        if (call == null || !call.isActive()) {
+            return;
+        }
         mEmitter.fireCallChanged(call);
     }
 
@@ -968,6 +1029,9 @@ public class PjSipService extends Service {
     }
 
     private void setupProximitySensorListener() {
+        if (proximitySensor == null) {
+            return;
+        }
         proximitySensorListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
